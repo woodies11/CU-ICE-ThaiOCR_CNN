@@ -11,7 +11,7 @@ from keras.utils import np_utils
 from keras import backend as K
 K.set_image_dim_ordering('th')
 from keras.models import model_from_json
-import cnn_model
+import cnnmodel
 
 
 # ------------------------------------------------------------------------
@@ -22,7 +22,8 @@ seed = 7
 numpy.random.seed(seed)
 # load data
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
-# reshape to be [samples][pixels][width][height]
+
+# reshape to be [samples][layer (black)][x][y]
 X_train = X_train.reshape(X_train.shape[0], 1, 28, 28).astype('float32')
 X_test = X_test.reshape(X_test.shape[0], 1, 28, 28).astype('float32')
 # normalize inputs from 0-255 to 0-1
@@ -34,15 +35,14 @@ y_test = np_utils.to_categorical(y_test)
 
 # ------------------------------------------------------------------------
 
-
-load = True
+load = False
 
 if load:
-	model = cnn_model.load_model_from_json('model.json', 'model.h5')
+	model = cnnmodel.load_model_from_json('model.json', 'model.h5')
 	print('model loaded from disk')
 else:
 	print('fitting model')
-	model = cnn_model.create_model(
+	model = cnnmodel.create_model(
 		X_train, 
 		y_train, 
 		X_test, 

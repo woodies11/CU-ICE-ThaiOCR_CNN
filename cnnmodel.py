@@ -44,10 +44,12 @@ def create_model(X_train, y_train, X_test, y_test, epochs, batch_size, save=True
 	def init_model():
 
 		num_classes = y_test.shape[1]
+		img_width = X_train.shape[2]
+		img_height = X_train.shape[3]
 
 		# create model
 		model = Sequential()
-		model.add(Conv2D(30, (5, 5), input_shape=(1, 28, 28), activation='relu'))
+		model.add(Conv2D(30, (5, 5), input_shape=(1, img_width, img_height), activation='relu'))
 		model.add(MaxPooling2D(pool_size=(2, 2)))
 		model.add(Conv2D(15, (3, 3), activation='relu'))
 		model.add(MaxPooling2D(pool_size=(2, 2)))

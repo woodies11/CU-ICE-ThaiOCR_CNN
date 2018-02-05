@@ -4,7 +4,7 @@ import glob
 from PIL import Image
 
 
-def load_data(max_set=None):
+def load_image_data(max_set=None):
 
 	def listdir_nohidden(path):
 		# list files without hidden file

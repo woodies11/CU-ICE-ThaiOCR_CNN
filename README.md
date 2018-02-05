@@ -28,6 +28,10 @@ You can either use Theano or Tensorflow. Config the backend choice in `~/.keras/
 conda install numpy scipy mkl nose sphinx keras theano matplotlib
 ```
 
+```bash
+pip install sklearn
+```
+
 config in `~/.theanorc`
 Mac OS X 10.13 have some problems with CUDA on my machine (GT750m) so I will use CPU only for now.
 
