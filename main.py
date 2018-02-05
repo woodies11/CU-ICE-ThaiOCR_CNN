@@ -9,7 +9,8 @@ from keras.utils import np_utils
 # percentage of data to keep as test set
 test_size = 0.20
 # number of set to load, load fewer during code testing
-num_of_set = 10
+# None for load all
+num_of_set = None
 
 # fix random
 numpy_seed = 7
@@ -46,7 +47,7 @@ X_test = X_test / 255
 
 
 # ------------------------------------------------------------------------
-load = True
+load = False
 
 if load:
 	model = cnnmodel.load_model_from_json('model.json', 'model.h5')
