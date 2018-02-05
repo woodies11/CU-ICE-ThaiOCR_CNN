@@ -23,19 +23,20 @@ source activate ENVNAME
 
 You can either use Theano or Tensorflow. Config the backend choice in `~/.keras/keras.json`
 
-### Theano
+### Theano, Keras, etc.
 ```bash
-conda install numpy scipy mkl nose sphinx pydot-ng
+conda install numpy scipy mkl nose sphinx keras theano matplotlib
 ```
 
 config in `~/.theanorc`
 Mac OS X 10.13 have some problems with CUDA on my machine (GT750m) so I will use CPU only for now.
 
-### Keras
+### Image Generation Tools
 ```bash
-pip install keras
+conda install pillow
 ```
 
+ref: [Pillow](http://pillow.readthedocs.io/en/3.0.x/installation.html)
 
 ### Dependencies
 for cv2 to work (utility to deal with images)

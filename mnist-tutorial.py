@@ -47,7 +47,7 @@ else:
 		y_train, 
 		X_test, 
 		y_test, 
-		epochs=10, 
+		epochs=1, 
 		batch_size=200, 
 		save=True
 	)

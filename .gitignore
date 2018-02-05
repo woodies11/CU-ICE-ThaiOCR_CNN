@@ -102,3 +102,20 @@ ENV/
 
 # macOS
 .DS_Store
+
+# ===================
+# PROJECT
+# ==================+
+
+# -----------
+# ignore data
+# -----------
+# character images should be regenerated using python codes
+image_from_font/*
+
+# font are to be downloaded separately
+fonts/*
+
+# prevent overriding other's models
+model.json
+model.h5
