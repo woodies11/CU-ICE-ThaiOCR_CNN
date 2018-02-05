@@ -37,6 +37,12 @@ pip install keras
 ```
 
 
+### Dependencies
+for cv2 to work (utility to deal with images)
+```bash
+conda install -c clinicalgraphics vtk
+```
+
 # Handy Snippets
 
 ## Python
