@@ -35,7 +35,7 @@ y_test = np_utils.to_categorical(y_test)
 # ------------------------------------------------------------------------
 
 
-load = False
+load = True
 
 if load:
 	model = cnn_model.load_model_from_json('model.json', 'model.h5')
