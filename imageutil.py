@@ -20,8 +20,11 @@ def readimageinput(img_path, preview=False, invert=False, bin_threshold=0.5):
 	if preview:
 		plt.imshow(img, cmap=plt.get_cmap('gray'))
 
+	img_width = img.shape[0]
+	img_height = img.shape[1]
+
 	# reshape the numpy array to the same format as our model
-	img = img.reshape(1, 1, 28, 28).astype('float32')
+	img = img.reshape(1, 1, img_width, img_height).astype('float32')
 
 
 	return img

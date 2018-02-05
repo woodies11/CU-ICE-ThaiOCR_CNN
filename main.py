@@ -8,7 +8,8 @@ from keras.utils import np_utils
 
 # percentage of data to keep as test set
 test_size = 0.20
-
+# number of set to load, load fewer during code testing
+num_of_set = 10
 
 # fix random
 numpy_seed = 7
@@ -16,7 +17,7 @@ sklearn_seed = 42
 numpy.random.seed(numpy_seed)
 
 # load our image data
-X_set, _y_set = traindata.load_image_data(10)
+X_set, _y_set = traindata.load_image_data(num_of_set)
 
 # convert our label to one-hot-encoded matrix
 encoder = LabelBinarizer()
@@ -45,7 +46,7 @@ X_test = X_test / 255
 
 
 # ------------------------------------------------------------------------
-load = False
+load = True
 
 if load:
 	model = cnnmodel.load_model_from_json('model.json', 'model.h5')
@@ -57,11 +58,56 @@ else:
 		y_train, 
 		X_test, 
 		y_test, 
-		epochs=1, 
-		batch_size=200, 
+		epochs=2, 
+		batch_size=50, 
 		save=True
 	)
 
 # evaluation of the model
 scores = model.evaluate(X_test, y_test, verbose=0)
 print("CNN Error: %.2f%%" % (100-scores[1]*100))
+
+# ======== TEST PREDICTION ==========
+
+from scipy import misc
+import matplotlib.pyplot as plt
+import os
+import imageutil
+
+sample_path = 'th_samples'
+
+paths = os.listdir(sample_path)
+
+correct_count = 0
+test_data_count = 0
+
+for img_path in paths:
+
+	# ignore system files
+	if(img_path.startswith('.')):
+		continue	
+
+	test_data_count += 1
+
+	img = imageutil.readimageinput(sample_path+'/'+img_path, True, False, 0.1)
+
+	ans = img_path.split('-')[0]
+
+	pred = model.predict_classes(img)
+
+	pred_proba = model.predict_proba(img)
+	pred_proba = "%.2f%%" % (pred_proba[0][pred]*100)
+
+	pred_class = classes[pred[0]]
+
+	is_correct = (str(pred_class) == str(ans))
+
+	if is_correct:
+		correct_count += 1
+
+	print(pred_class, "with probability", pred_proba, 'which is', is_correct)
+
+	plt.show();
+
+print('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
+
