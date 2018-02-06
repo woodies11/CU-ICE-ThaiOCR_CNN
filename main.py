@@ -92,7 +92,7 @@ for img_path in paths:
 
 	img = imageutil.readimageinput(sample_path+'/'+img_path, True, False, 0.1)
 
-	ans = img_path.split('-')[0]
+	ans = img_path.split('-')[0].split('.')[0]
 
 	pred = model.predict_classes(img)
 
@@ -108,7 +108,7 @@ for img_path in paths:
 
 	print(pred_class, "with probability", pred_proba, 'which is', is_correct)
 
-	plt.show();
+	plt.show()
 
 print('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
 
