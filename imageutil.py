@@ -1,19 +1,26 @@
-import numpy
-from scipy import ndimage
-from scipy import misc
+import numpy as np
+from PIL import Image
 import matplotlib.pyplot as plt
+import cv2
 
-def readimageinput(img_path, preview=False, invert=False, bin_threshold=0.5):
+def readimageinput(img_path, preview=False, invert=False, bin_threshold=0.5, size=None):
 	# read image as black and white, Int mode (0-255)
-	img = misc.imread(img_path, flatten=True, mode='I')
+	img = Image.open(img_path).convert('L')
+
+	# resize image if size is specified
+	if size is not None:
+		img = img.resize(size=size)
+
+	# convert to numpy array
+	img = np.array(img)
+
+	# binarisation
+	ret, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
 	# mnist dataset is white on black, this option invert the input
 	# if needed to match our trained set
 	if invert:
 		img = 1 - img/255
-
-	# binarisation
-	img = numpy.where(img > bin_threshold, 1, 0)
 
 	# if preview, the program will be block until the
 	# plot window is closed

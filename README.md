@@ -35,6 +35,12 @@ pip install sklearn
 config in `~/.theanorc`
 Mac OS X 10.13 have some problems with CUDA on my machine (GT750m) so I will use CPU only for now.
 
+#### GPU Array for CUDA
+
+```bash
+conda install -c conda-forge pygpu 
+```
+
 ### Image Generation Tools
 ```bash
 conda install pillow

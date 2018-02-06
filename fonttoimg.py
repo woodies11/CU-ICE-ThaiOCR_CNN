@@ -3,7 +3,7 @@ import os
 import glob
 from fontTools.ttLib import TTFont
 
-def generate_image(char, path, font_path, image_width=300, image_height=300):
+def generate_image(char, path, font_path, image_width=128, image_height=128):
 
 	# create a white width*height image
 	img = Image.new('RGB', (img_width, img_height), (255, 255, 255))
@@ -37,8 +37,8 @@ def char_in_font(unicode_char, font):
     return False
 
 image_store_path = "image_from_font/"
-img_width = 300
-img_height = 300
+img_width = 128
+img_height = 128
 
 # get all fonts
 fonts = listdir_nohidden('fonts')

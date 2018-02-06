@@ -5,6 +5,23 @@ import numpy
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from keras.utils import np_utils
+import sys
+import argparse
+
+# TODO: export config so git won't kill us
+load = True
+
+# parse argument
+parser = argparse.ArgumentParser(description='Whether to force recreate model.')
+parser.add_argument(
+	'-n', 
+	'--new-model', 
+	action='store_true', 
+	help='use this argument to force model recreation.'
+)
+args = parser.parse_args()
+
+load = not args.new_model
 
 # percentage of data to keep as test set
 test_size = 0.20
@@ -17,56 +34,59 @@ numpy_seed = 7
 sklearn_seed = 42
 numpy.random.seed(numpy_seed)
 
-# load our image data
-X_set, _y_set = traindata.load_image_data(num_of_set)
-
-# convert our label to one-hot-encoded matrix
-encoder = LabelBinarizer()
-encoder.fit(_y_set)
-classes = encoder.classes_
-y_set = encoder.transform(_y_set)
-
-# partition data into test set and train set
-X_train, X_test, y_train, y_test = train_test_split(
-	X_set, 
-	y_set, 
-	test_size=test_size,
-	random_state=sklearn_seed
-)
-
-img_width = X_set.shape[1]
-img_height = X_set.shape[2]
-print("Images are of {}x{} size.".format(img_width, img_height))
-
-# reshape to be [samples][layer (black)][x][y]
-X_train = X_train.reshape(X_train.shape[0], 1, img_width, img_height).astype('float32')
-X_test = X_test.reshape(X_test.shape[0], 1, img_width, img_height).astype('float32')
-# normalize inputs from 0-255 to 0-1
-X_train = X_train / 255
-X_test = X_test / 255
+classes = [chr(i) for i in range(ord('ก'), ord('ฮ'))]
 
 
 # ------------------------------------------------------------------------
-load = False
+
 
 if load:
 	model = cnnmodel.load_model_from_json('model.json', 'model.h5')
 	print('model loaded from disk')
+
 else:
+	# load our image data
+	X_set, _y_set = traindata.load_image_data(num_of_set)
+
+	# convert our label to one-hot-encoded matrix
+	encoder = LabelBinarizer()
+	encoder.fit(_y_set)
+	classes = encoder.classes_
+	y_set = encoder.transform(_y_set)
+
+	# partition data into test set and train set
+	X_train, X_test, y_train, y_test = train_test_split(
+		X_set, 
+		y_set, 
+		test_size=test_size,
+		random_state=sklearn_seed
+	)
+
+	img_width = X_set.shape[1]
+	img_height = X_set.shape[2]
+	print("Images are of {}x{} size.".format(img_width, img_height))
+
+	# reshape to be [samples][layer (black)][x][y]
+	X_train = X_train.reshape(X_train.shape[0], 1, img_width, img_height).astype('float32')
+	X_test = X_test.reshape(X_test.shape[0], 1, img_width, img_height).astype('float32')
+	# normalize inputs from 0-255 to 0-1
+	X_train = X_train / 255
+	X_test = X_test / 255
 	print('fitting model')
 	model = cnnmodel.create_model(
 		X_train, 
 		y_train, 
 		X_test, 
 		y_test, 
-		epochs=2, 
-		batch_size=50, 
+		epochs=10, 
+		batch_size=100, 
 		save=True
 	)
+	# evaluation of the model
+	scores = model.evaluate(X_test, y_test, verbose=0)
+	print("CNN Error: %.2f%%" % (100-scores[1]*100))
 
-# evaluation of the model
-scores = model.evaluate(X_test, y_test, verbose=0)
-print("CNN Error: %.2f%%" % (100-scores[1]*100))
+
 
 # ======== TEST PREDICTION ==========
 
@@ -81,6 +101,7 @@ paths = os.listdir(sample_path)
 
 correct_count = 0
 test_data_count = 0
+subplot_num = 0
 
 for img_path in paths:
 
@@ -90,9 +111,16 @@ for img_path in paths:
 
 	test_data_count += 1
 
-	img = imageutil.readimageinput(sample_path+'/'+img_path, True, False, 0.1)
+	subplot_num += 1
+	if subplot_num <= 9:
+		plt.subplot(3, 3, subplot_num)
+	else:
+		subplot_num = 0
+		plt.show()
 
-	ans = img_path.split('-')[0]
+	img = imageutil.readimageinput(sample_path+'/'+img_path, True, False, 0.1, size=(128,128))
+
+	ans = img_path.split('.')[0].split('-')[0].split(' ')[0]
 
 	pred = model.predict_classes(img)
 
@@ -101,14 +129,19 @@ for img_path in paths:
 
 	pred_class = classes[pred[0]]
 
-	is_correct = (str(pred_class) == str(ans))
+	is_correct = str(pred_class) == str(ans)
 
 	if is_correct:
 		correct_count += 1
 
-	print(pred_class, "with probability", pred_proba, 'which is', is_correct)
+	result_sum = "ans: {} predicted: {} with probability {} | {}".format(str(ans), str(pred_class), pred_proba, "correct" if is_correct else "INCORRECT")
 
-	plt.show();
+	print(result_sum)
+
+	plt.title("pred: {} : {}".format(pred_class, pred_proba), fontproperties='Tahoma', color='black' if is_correct else 'red')
+
+
+plt.show()	
 
 print('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
 

@@ -1,5 +1,4 @@
 import numpy
-from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout

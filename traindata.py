@@ -6,6 +6,8 @@ from PIL import Image
 
 def load_image_data(max_set=None):
 
+	print('loading data into Numpy Array')
+
 	def listdir_nohidden(path):
 		# list files without hidden file
 	    return glob.glob(os.path.join(path, '*'))
