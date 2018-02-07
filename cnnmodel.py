@@ -26,14 +26,14 @@ def load_model_from_json(json_file='model.json', weights_file='model.h5'):
 	## TODO: allow handling of exception if file not found
 	
 	# load json and create model
-	json_file = open('model.json', 'r')
+	json_file = open(json_file, 'r')
 	loaded_model_json = json_file.read()
 	json_file.close()
 	model = model_from_json(loaded_model_json)
 	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 	# load weights into new model
-	model.load_weights("model.h5")
+	model.load_weights(weights_file)
 
 	return model
 

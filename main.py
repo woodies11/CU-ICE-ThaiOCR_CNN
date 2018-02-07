@@ -19,9 +19,16 @@ parser.add_argument(
 	action='store_true', 
 	help='use this argument to force model recreation.'
 )
+parser.add_argument(
+	'-m', 
+	'--model',
+	default='model', 
+	help='specify model to use (both JSON and h5 files must be of the given name)'
+)
 args = parser.parse_args()
 
 load = not args.new_model
+model_name = args.model
 
 # percentage of data to keep as test set
 test_size = 0.20
@@ -41,7 +48,7 @@ classes = [chr(i) for i in range(ord('ก'), ord('ฮ'))]
 
 
 if load:
-	model = cnnmodel.load_model_from_json('model.json', 'model.h5')
+	model = cnnmodel.load_model_from_json(model_name+'.json', model_name+'.h5')
 	print('model loaded from disk')
 
 else:
@@ -138,7 +145,7 @@ for img_path in paths:
 
 	print(result_sum)
 
-	plt.title("pred: {} : {}".format(pred_class, pred_proba), fontproperties='Tahoma', color='black' if is_correct else 'red')
+	plt.title("pred: {}".format(pred_class), fontproperties='Tahoma', color='black' if is_correct else 'red')
 
 
 plt.show()	

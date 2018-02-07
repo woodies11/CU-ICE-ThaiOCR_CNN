@@ -3,6 +3,8 @@ import os
 import glob
 from fontTools.ttLib import TTFont
 
+delete_invalid = True
+
 def generate_image(char, path, font_path, image_width=128, image_height=128):
 
 	# create a white width*height image
@@ -43,7 +45,12 @@ img_height = 128
 # get all fonts
 fonts = listdir_nohidden('fonts')
 
+total_fonts = len(fonts)
+current_count = 0
 for font_path in fonts:
+
+	current_count += 1
+
 	# get the end (final of path) and remove extension
 	font_name = font_path.split('/')[-1].split('.')[0]
 
@@ -52,17 +59,25 @@ for font_path in fonts:
 	# our CNN
 	# PS This assume that if ก is not supported
 	# then all is not supported and vice versa
-	f = TTFont(font_path)
 	supported = False
 	try:
+		f = TTFont(font_path)
 		supported = char_in_font('ก', f)
 	except:
 		supported = False
-		print('{} corrupted | '.format(font_name), end='')
+		print('{}/{} - {} corrupted | '.format(current_count, total_fonts, font_name), end='')
 
 	if not supported:
-		print('{} not supported'.format(font_name))
+		print('{} not supported'.format(font_name), end='')
+		if delete_invalid:
+			os.remove(font_path)
+			print(' | deleted', end='')
+		print('')
 		continue
+
+	# show progress
+	if current_count % 50 == 0:
+		print('{}/{}'.format(current_count, total_fonts))
 
 	# we want to store all characters generate from
 	# this font in a folder with the font's name
