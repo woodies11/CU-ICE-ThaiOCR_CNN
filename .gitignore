@@ -112,6 +112,7 @@ ENV/
 # -----------
 # character images should be regenerated using python codes
 image_from_font/*
+th_samples
 
 # font are to be downloaded separately
 fonts/*
@@ -119,3 +120,4 @@ fonts/*
 # prevent overriding other's models
 model.json
 model.h5
+model_*
