@@ -142,6 +142,7 @@ for img_path in paths:
 		correct_count += 1
 
 	result_sum = "ans: {} predicted: {} with probability {} | {}".format(str(ans), str(pred_class), pred_proba, "correct" if is_correct else "INCORRECT")
+	plt.show()
 
 	print(result_sum)
 

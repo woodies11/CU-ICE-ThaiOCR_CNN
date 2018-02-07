@@ -28,7 +28,8 @@ def load_image_data(max_set=None):
 	)
 	y_set = np.array(
 		[
-			image.split('/')[-1].split('.')[0]  
+			# '/' for mac directory, '\\' for windows directory 
+			image.split('/')[-1].split('\\')[-1].split('.')[0]   
 				for set_path in set_paths
 					for image in listdir_nohidden(set_path)
 		]
