@@ -117,8 +117,8 @@ for img_path in paths:
 		continue	
 
 	test_data_count += 1
-
 	subplot_num += 1
+
 	if subplot_num <= 9:
 		plt.subplot(3, 3, subplot_num)
 	else:
@@ -142,7 +142,6 @@ for img_path in paths:
 		correct_count += 1
 
 	result_sum = "ans: {} predicted: {} with probability {} | {}".format(str(ans), str(pred_class), pred_proba, "correct" if is_correct else "INCORRECT")
-	plt.show()
 
 	print(result_sum)
 
