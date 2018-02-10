@@ -89,7 +89,7 @@ for font_path in fonts:
 		os.makedirs(directory)
 	else:
 		continue
-	for i in range(ord('ก'), ord('ฮ')):
+	for i in range(ord('ก'), ord('ฮ')+1):
 		char = chr(i)
 		out_path = directory + char + '.png'
 		
