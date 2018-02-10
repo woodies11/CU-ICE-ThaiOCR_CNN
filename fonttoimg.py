@@ -29,7 +29,8 @@ def generate_image(char, path, font_path, image_width=128, image_height=128):
 	img.save(path, 'png')
 
 def listdir_nohidden(path):
-    return glob.glob(os.path.join(path, '*'))
+	directories = glob.glob(path+'/**/*', recursive=True)
+	return [file for file in directories if os.path.isfile(file)]
 
 def char_in_font(unicode_char, font):
     for cmap in font['cmap'].tables:
@@ -52,7 +53,7 @@ for font_path in fonts:
 	current_count += 1
 
 	# get the end (final of path) and remove extension
-	font_name = font_path.split('/')[-1].split('.')[0]
+	font_name = font_path.split('/')[-1].split('\\')[-1].split('.')[0]
 
 	# skip the font if Thai is not supported
 	# this avoid invalid character messing up
@@ -89,8 +90,15 @@ for font_path in fonts:
 		os.makedirs(directory)
 	else:
 		continue
+	error = False
 	for i in range(ord('ก'), ord('ฮ')):
-		char = chr(i)
-		out_path = directory + char + '.png'
-		
-		generate_image(char, out_path, font_path, img_width, img_height)
+		if (not error):
+			char = chr(i)
+			out_path = directory + char + '.png'
+
+			try:
+				generate_image(char, out_path, font_path, img_width, img_height)
+			except:
+				print("------------------ERROR!-------------- \n char "+char+" from "+font_path+" cannot be generated \n ----------------------------")
+				error = True
+

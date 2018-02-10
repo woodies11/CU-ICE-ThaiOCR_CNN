@@ -121,3 +121,5 @@ fonts/*
 model.json
 model.h5
 model_*
+
+saved_model/
