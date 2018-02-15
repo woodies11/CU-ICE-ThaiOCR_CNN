@@ -90,13 +90,6 @@ for font_path in fonts:
 		os.makedirs(directory)
 	else:
 		continue
-<<<<<<< HEAD
-	for i in range(ord('ก'), ord('ฮ')+1):
-		char = chr(i)
-		out_path = directory + char + '.png'
-		
-		generate_image(char, out_path, font_path, img_width, img_height)
-=======
 	error = False
 	for i in range(ord('ก'), ord('ฮ')):
 		if (not error):
@@ -109,4 +102,3 @@ for font_path in fonts:
 				print("------------------ERROR!-------------- \n char "+char+" from "+font_path+" cannot be generated \n ----------------------------")
 				error = True
 
->>>>>>> 7c5cf924d5c069b9da5f8d3076524768f345ba72
