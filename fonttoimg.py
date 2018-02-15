@@ -91,7 +91,7 @@ for font_path in fonts:
 	else:
 		continue
 	error = False
-	for i in range(ord('ก'), ord('ฮ')):
+	for i in range(ord('ก'), ord('ฮ') + 1):
 		if (not error):
 			char = chr(i)
 			out_path = directory + char + '.png'
