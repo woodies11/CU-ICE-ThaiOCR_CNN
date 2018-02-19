@@ -127,6 +127,7 @@ else:
 	plt.legend(['train','val'],loc=4)
 	#print plt.style.available # use bmh, classic,ggplot for big pictures
 	plt.style.use(['classic'])
+	plt.show()
 
 	# evaluation of the model
 	scores = model.evaluate(X_test, y_test, verbose=0)
