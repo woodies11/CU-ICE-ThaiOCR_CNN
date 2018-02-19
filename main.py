@@ -2,9 +2,11 @@ import traindata
 import cnnmodel
 import math
 import numpy
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from keras.utils import np_utils
+from keras.callbacks import EarlyStopping
 import sys
 import argparse
 
@@ -41,7 +43,12 @@ numpy_seed = 7
 sklearn_seed = 42
 numpy.random.seed(numpy_seed)
 
-classes = [chr(i) for i in range(ord('ก'), ord('ฮ'))]
+classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
+
+#batch_size to train
+batch_size = 100
+# number of epochs to train
+nb_epoch = 20
 
 
 # ------------------------------------------------------------------------
@@ -80,15 +87,47 @@ else:
 	X_train = X_train / 255
 	X_test = X_test / 255
 	print('fitting model')
-	model = cnnmodel.create_model(
+	early_stopping_monitor = EarlyStopping(patience=30)
+	model,hist = cnnmodel.create_model(
 		X_train, 
 		y_train, 
 		X_test, 
 		y_test, 
-		epochs=10, 
-		batch_size=100, 
+		epochs=nb_epoch, 
+		batch_size=batch_size, 
+		callback_fn = [early_stopping_monitor],
 		save=True
 	)
+
+	# visualizing losses and accuracy
+	train_loss=hist.history['loss']
+	val_loss=hist.history['val_loss']
+	train_acc=hist.history['acc']
+	val_acc=hist.history['val_acc']
+	xc=range(nb_epoch)
+
+	plt.figure(1,figsize=(7,5))
+	plt.plot(xc,train_loss)
+	plt.plot(xc,val_loss)
+	plt.xlabel('num of Epochs')
+	plt.ylabel('loss')
+	plt.title('train_loss vs val_loss')
+	plt.grid(True)
+	plt.legend(['train','val'])
+	print (plt.style.available) # use bmh, classic,ggplot for big pictures
+	plt.style.use(['classic'])
+
+	plt.figure(2,figsize=(7,5))
+	plt.plot(xc,train_acc)
+	plt.plot(xc,val_acc)
+	plt.xlabel('num of Epochs')
+	plt.ylabel('accuracy')
+	plt.title('train_acc vs val_acc')
+	plt.grid(True)
+	plt.legend(['train','val'],loc=4)
+	#print plt.style.available # use bmh, classic,ggplot for big pictures
+	plt.style.use(['classic'])
+
 	# evaluation of the model
 	scores = model.evaluate(X_test, y_test, verbose=0)
 	print("CNN Error: %.2f%%" % (100-scores[1]*100))
@@ -98,7 +137,6 @@ else:
 # ======== TEST PREDICTION ==========
 
 from scipy import misc
-import matplotlib.pyplot as plt
 import os
 import imageutil
 

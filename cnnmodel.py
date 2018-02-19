@@ -38,7 +38,7 @@ def load_model_from_json(json_file='model.json', weights_file='model.h5'):
 	return model
 
 
-def create_model(X_train, y_train, X_test, y_test, epochs, batch_size, save=True):
+def create_model(X_train, y_train, X_test, y_test, epochs, batch_size, callback_fn=[], save=True):
 
 	def init_model():
 
@@ -63,18 +63,19 @@ def create_model(X_train, y_train, X_test, y_test, epochs, batch_size, save=True
 
 	model = init_model()
 
-	model.fit(
+	hist = model.fit(
 		X_train, 
 		y_train, 
 		validation_data=(X_test, y_test), 
 		epochs=epochs, 
-		batch_size=batch_size
+		batch_size=batch_size,
+		callbacks=callback_fn
 	)
 
 	if save:
 		save_model_to_json(model)
 
-	return model
+	return (model,hist)
 
 def create_detection_model():
 
