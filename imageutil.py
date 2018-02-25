@@ -3,7 +3,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
 
-def readimageinput(img_path, preview=False, invert=False, bin_threshold=0.5, size=None):
+def readimageinput(img_path, preview=False, invert=False, size=None):
 	# read image as black and white, Int mode (0-255)
 	img = Image.open(img_path).convert('L')
 
@@ -35,6 +35,7 @@ def readimageinput(img_path, preview=False, invert=False, bin_threshold=0.5, siz
 
 
 	return img
-
-
-
+	
+if __name__ == '__main__':
+	readimageinput('th_samples/ก/im2_1.jpg', True, False, (128,128))
+	plt.show()
