@@ -179,7 +179,7 @@ def letter_seg(lines_img, x_lines, i, sameple_name, letter_index):
 		letter_img = cv2.resize(letter_img_tmp, dsize =(28, 28), interpolation = cv2.INTER_AREA)
 		char = chr(letter_index)
 		print(char)
-		cv2.imwrite('./segmented_img/'+sameple_name+'/'+char+'.jpg', 255-letter_img)
+		cv2.imwrite('./segmented_img/'+sameple_name+'/'+str(letter_index)+'.jpg', 255-letter_img)
 	return letter_index
 						
 def listdir_nohidden(path):
