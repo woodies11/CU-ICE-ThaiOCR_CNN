@@ -2,8 +2,15 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import pathlib
 
 np.set_printoptions(threshold='nan')
+
+filename = "im1"
+#-----------------Create directory------------#
+
+pathlib.Path('./data/test_result').mkdir(parents=True, exist_ok=True) 
+pathlib.Path('./segmented_img/'+filename+'/').mkdir(parents=True, exist_ok=True)
 
 #------------------Functions------------------#
 
@@ -25,16 +32,10 @@ def showimages():
 
 def closewindows():
 	k = cv2.waitKey(0)
-	if k & 0xFF == ord('s'):
-		comment = input("Comment:-\n ")
-		cv2.imwrite('./data/test_result/'+comment+'_thres'+'.jpg',final_thr)
-		cv2.imwrite('./data/test_result/'+comment+'_src'+'.jpg',src_img)
-		cv2.imwrite('./data/test_result/'+comment+'_contr'+'.jpg',final_contr)
-		print("Completed")
-	elif k & 0xFF == int(27):
-		cv2.destroyAllWindows()
-	else:
-		closewindows()
+	cv2.imwrite('./data/test_result/'+filename+'_thres'+'.jpg',final_thr)
+	cv2.imwrite('./data/test_result/'+filename+'_src'+'.jpg',src_img)
+	cv2.imwrite('./data/test_result/'+filename+'_contr'+'.jpg',final_contr)
+	cv2.destroyAllWindows()
 
 def line_array(array):
 	list_x_upper = []
@@ -166,34 +167,25 @@ def letter_seg(lines_img, x_lines, i):
 	pright = 0
 	pbottom = 0
 	for e in range(len(letter)):
-		if(letter[e][0]<x_linescopy[0]):
-			ctop = letter[e][1]-5
-			cleft = letter[e][0]-5
-			cright = letter[e][0]+letter[e][2]+5
-			cbottom = letter[e][1]+letter[e][3]+5 
-			cmid = (cleft+cright)/2
-			if( pleft < cmid and pright > cmid):
-				ctop = min(ptop,ctop)
-				cleft = min(pleft,cleft)
-				cright = max(pright,cright)
-				cbottom = max(pbottom,cbottom)
-			else:
-				letter_index += 1
-				ptop = ctop
-				pleft = cleft
-				pright = cright
-				pbottom = cbottom
-			letter_img_tmp = lines_img[i][ctop:cbottom,cleft:cright]
-			letter_img = cv2.resize(letter_img_tmp, dsize =(28, 28), interpolation = cv2.INTER_AREA)
-			cv2.imwrite('./segmented_img/img2/'+str(i+1)+'_'+str(word)+'_'+str(letter_index)+'.jpg', 255-letter_img)
+		ctop = letter[e][1]-5
+		cleft = letter[e][0]-5
+		cright = letter[e][0]+letter[e][2]+5
+		cbottom = letter[e][1]+letter[e][3]+5 
+		cmid = (cleft+cright)/2
+		if( pleft < cmid and pright > cmid):
+			ctop = min(ptop,ctop)
+			cleft = min(pleft,cleft)
+			cright = max(pright,cright)
+			cbottom = max(pbottom,cbottom)
 		else:
-			x_linescopy.pop(0)
-			word += 1
-			letter_index = 1
-			letter_img_tmp = lines_img[i][letter[e][1]-5:letter[e][1]+letter[e][3]+5,letter[e][0]-5:letter[e][0]+letter[e][2]+5]
-			letter_img = cv2.resize(letter_img_tmp, dsize =(28, 28), interpolation = cv2.INTER_AREA)
-			cv2.imwrite('./segmented_img/img1/'+str(i+1)+'_'+str(word)+'_'+str(letter_index)+'.jpg', 255-letter_img)
-			# print(letter[e][0],x_linescopy[0], word)
+			letter_index += 1
+			ptop = ctop
+			pleft = cleft
+			pright = cright
+			pbottom = cbottom
+		letter_img_tmp = lines_img[i][ctop:cbottom,cleft:cright]
+		letter_img = cv2.resize(letter_img_tmp, dsize =(28, 28), interpolation = cv2.INTER_AREA)
+		cv2.imwrite('./segmented_img/'+filename+'/'+str(i+1)+'_'+str(letter_index)+'.jpg', 255-letter_img)
 						
 		
 
@@ -205,7 +197,7 @@ def letter_seg(lines_img, x_lines, i):
 
 
 print("\n........Program Initiated.......\n")
-src_img= cv2.imread('./data/im1.jpg', 1)
+src_img= cv2.imread('./data/'+filename+'.jpg', 1)
 copy = src_img.copy()
 height = src_img.shape[0]
 width = src_img.shape[1]
