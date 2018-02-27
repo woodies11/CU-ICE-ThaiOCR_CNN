@@ -1,0 +1,4 @@
+-put samples in /data folder
+-run main.py 
+-trigger cv2.waitkey()
+-result will be  /in segmented_img/sample_name

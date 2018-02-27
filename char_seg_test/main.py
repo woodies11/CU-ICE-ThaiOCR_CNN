@@ -177,9 +177,15 @@ def letter_seg(lines_img, x_lines, i, sameple_name, letter_index):
 			pbottom = cbottom
 		letter_img_tmp = lines_img[i][ctop:cbottom,cleft:cright]
 		letter_img = cv2.resize(letter_img_tmp, dsize =(28, 28), interpolation = cv2.INTER_AREA)
-		char = chr(letter_index)
-		print(char)
-		cv2.imwrite('./segmented_img/'+sameple_name+'/'+str(letter_index)+'.jpg', 255-letter_img)
+		path = './segmented_img/'+sameple_name+'/'
+		temp_name = str(letter_index)+'.png'
+		file_name = chr(letter_index)+'.png'
+		cv2.imwrite(path+temp_name, 255-letter_img)
+		try:
+			os.rename(path+temp_name, path+file_name)
+		except WindowsError:
+			os.remove(path+file_name)
+			os.rename(path+temp_name, path+file_name)
 	return letter_index
 						
 def listdir_nohidden(path):
