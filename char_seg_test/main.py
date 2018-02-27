@@ -164,6 +164,7 @@ def letter_seg(lines_img, x_lines, i, sameple_name, letter_index):
 		cright = letter[e][0]+letter[e][2]+5
 		cbottom = letter[e][1]+letter[e][3]+5 
 		cmid = (cleft+cright)/2
+		# check for ฐ ญ
 		if( pleft < cmid and pright > cmid):
 			ctop = min(ptop,ctop)
 			cleft = min(pleft,cleft)
@@ -175,6 +176,9 @@ def letter_seg(lines_img, x_lines, i, sameple_name, letter_index):
 			pleft = cleft
 			pright = cright
 			pbottom = cbottom
+		# skip ฤ and ฦ in unicode
+		if letter_index == 3620 or letter_index == 3622:
+			letter_index += 1
 		letter_img_tmp = lines_img[i][ctop:cbottom,cleft:cright]
 		letter_img = cv2.resize(letter_img_tmp, dsize =(28, 28), interpolation = cv2.INTER_AREA)
 		path = './segmented_img/'+sameple_name+'/'
