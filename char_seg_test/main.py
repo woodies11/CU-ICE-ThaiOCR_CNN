@@ -27,7 +27,7 @@ def showimages():
 	# plt.show()
 
 def closewindows(sameple_name):
-	k = cv2.waitKey(0)
+	# k = cv2.waitKey(0)
 	cv2.imwrite('./data/test_result/'+sameple_name+'_thres'+'.jpg',final_thr)
 	cv2.imwrite('./data/test_result/'+sameple_name+'_src'+'.jpg',src_img)
 	# cv2.imwrite('./data/test_result/'+sameple_name+'_contr'+'.jpg',final_contr)
@@ -94,7 +94,8 @@ def refine_endword(array):
 	for y in range(len(array)-1):
 		if array[y]+1 < array[y+1]:
 			refine_list.append(array[y])
-	refine_list.append(array[-1])
+	if len(array) != 0:
+		refine_list.append(array[-1])
 	return refine_list
 
 def refine_array(array_upper, array_lower):
@@ -225,11 +226,11 @@ for sample_path in samples:
 	grey_img = cv2.cvtColor(src_img, cv2.COLOR_BGR2GRAY)
 
 	print("Applying Adaptive Threshold with kernel :- 21 X 21")
-	bin_img = cv2.adaptiveThreshold(grey_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,21,20)
+	bin_img = cv2.adaptiveThreshold(grey_img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,51,10)
 	bin_img1 = bin_img.copy()
 	bin_img2 = bin_img.copy()
 
-	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
 	kernel1 = np.array([[1,0,1],[0,1,0],[1,0,1]], dtype = np.uint8)
 	# final_thr = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
 	# final_thr = cv2.dilate(bin_img,kernel1,iterations = 1)
@@ -255,6 +256,7 @@ for sample_path in samples:
 
 	upperlines, lowerlines = refine_array(upper_lines, lower_lines)
 
+	shouldSkip = False
 	# print(upperlines, lowerlines)
 	if len(upperlines)==len(lowerlines):
 		lines = []
@@ -268,13 +270,12 @@ for sample_path in samples:
 	else:
 		print("Too much noise in image, unable to process.\nPlease try with another image. Ctrl-C to exit:- ")
 		showimages()
-		k = cv2.waitKey(0)
-		while 1:
-			k = cv2.waitKey(0)
-			if k & 0xFF == ord('q'):
-				cv2.destroyAllWindows()
-				exit()
+		# k = cv2.waitKey(0)
+		cv2.destroyAllWindows()
+		shouldSkip = True
 
+	if shouldSkip :
+		continue
 	lines = np.array(lines)
 
 	no_of_lines = len(lines)

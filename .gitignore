@@ -123,3 +123,5 @@ model.h5
 model_*
 
 saved_model/
+
+char_seg_test/data/
