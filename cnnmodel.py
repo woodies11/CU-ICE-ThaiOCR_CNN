@@ -56,8 +56,8 @@ def create_model(X_train, y_train, X_test, y_test, epochs, batch_size, callback_
 		model.add(MaxPooling2D(pool_size=(2, 2)))
 		model.add(Dropout(0.2))
 		model.add(Flatten())
-		model.add(Dense(128, activation='relu'))
-		model.add(Dense(50, activation='relu'))
+		model.add(Dense(512, activation='relu'))
+		model.add(Dense(256, activation='relu'))
 		model.add(Dense(num_classes, activation='softmax'))
 		# Compile model
 		model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
