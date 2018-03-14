@@ -48,7 +48,7 @@ classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
 #batch_size to train
 batch_size = 100
 # number of epochs to train
-nb_epoch = 20
+nb_epoch = 10
 
 
 # ------------------------------------------------------------------------
