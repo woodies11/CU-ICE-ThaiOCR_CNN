@@ -48,16 +48,18 @@ def create_model(X_train, y_train, X_test, y_test, epochs, batch_size, callback_
 
 		# create model
 		model = Sequential()
-		model.add(Conv2D(30, (5, 5), input_shape=(1, img_width, img_height), activation='relu'))
+		model.add(Conv2D(32, (5, 5), input_shape=(1, img_width, img_height), activation='relu'))
 		model.add(MaxPooling2D(pool_size=(2, 2)))
-		model.add(Conv2D(15, (4, 4), activation='relu'))
+		model.add(Conv2D(64, (3, 3), activation='relu'))
 		model.add(MaxPooling2D(pool_size=(2, 2)))
-		model.add(Conv2D(7, (3, 3), activation='relu'))
+		model.add(Conv2D(128, (3, 3), activation='relu'))
 		model.add(MaxPooling2D(pool_size=(2, 2)))
-		model.add(Dropout(0.2))
 		model.add(Flatten())
+		model.add(Dropout(0.5))
 		model.add(Dense(512, activation='relu'))
+		model.add(Dropout(0.5))
 		model.add(Dense(256, activation='relu'))
+		model.add(Dropout(0.5))
 		model.add(Dense(num_classes, activation='softmax'))
 		# Compile model
 		model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
