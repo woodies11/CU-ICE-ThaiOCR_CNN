@@ -140,11 +140,17 @@ else:
 from scipy import misc
 import os
 import imageutil
+import glob
 
 sample_path = 'th_samples'
 
 paths = os.listdir(sample_path)
 
+def listdir_nohidden(path):
+	# list files without hidden file
+	return glob.glob(os.path.join(path, '*'))
+
+folder_paths = listdir_nohidden(sample_path)
 
 # (count, right)
 classes_dict = {chr(i):[0,0] for i in range(ord('ก'), ord('ฮ')+1)}
@@ -153,44 +159,47 @@ correct_count = 0
 test_data_count = 0
 subplot_num = 0
 
-for img_path in paths:
+for folder_path in folder_paths:
+	for img_full_path in listdir_nohidden(folder_path):
+		folder_name = folder_path.split('/')[-1].split('\\')[-1]
+		img_path = img_full_path.split('/')[-1].split('\\')[-1]
+		# ignore system files
+		if(img_path.startswith('.')):
+			continue	
 
-	# ignore system files
-	if(img_path.startswith('.')):
-		continue	
+		test_data_count += 1
+		subplot_num += 1
 
-	test_data_count += 1
-	subplot_num += 1
+		if subplot_num <= 9:
+			plt.subplot(3, 3, subplot_num)
+		else:
+			subplot_num = 0
+			plt.figure()
 
-	if subplot_num <= 9:
-		plt.subplot(3, 3, subplot_num)
-	else:
-		subplot_num = 0
-		plt.figure()
+		img = imageutil.readimageinput(img_full_path, True, False, 0.1, size=(128,128))
 
-	img = imageutil.readimageinput(sample_path+'/'+img_path, True, False, 0.1, size=(128,128))
+		ans = folder_name.split('.')[0].split('-')[0].split(' ')[0]
 
-	ans = img_path.split('.')[0].split('-')[0].split(' ')[0]
+		y_prob = model.predict(img)
+		pred = y_prob.argmax(axis=-1)
 
-	pred = model.predict_classes(img)
+		# pred_proba = model.predict_proba(img)
+		# pred_proba = "%.2f%%" % (pred_proba[0][pred]*100)
 
-	pred_proba = model.predict_proba(img)
-	pred_proba = "%.2f%%" % (pred_proba[0][pred]*100)
+		pred_class = classes[pred[0]]
 
-	pred_class = classes[pred[0]]
+		is_correct = str(pred_class) == str(ans)
 
-	is_correct = str(pred_class) == str(ans)
+		classes_dict[ans][0] += 1
+		if is_correct:
+			correct_count += 1
+			classes_dict[ans][1] += 1
 
-	classes_dict[ans][0] += 1
-	if is_correct:
-		correct_count += 1
-		classes_dict[ans][1] += 1
+		result_sum = "ans: {} predicted: {} with probability {} | {}".format(str(ans), str(pred_class), 0, "correct" if is_correct else "INCORRECT")
 
-	result_sum = "ans: {} predicted: {} with probability {} | {}".format(str(ans), str(pred_class), pred_proba, "correct" if is_correct else "INCORRECT")
+		print(result_sum)
 
-	print(result_sum)
-
-	plt.title("pred: {}".format(pred_class), fontproperties='Tahoma', color='black' if is_correct else 'red')
+		plt.title("pred: {}".format(pred_class), fontproperties='Tahoma', color='black' if is_correct else 'red')
 
 classes_acc = {k:(classes_dict[k][1]/classes_dict[k][0] if classes_dict[k][0] > 0 else 0) for k in classes_dict}
 print(classes_acc)

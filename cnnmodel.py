@@ -1,4 +1,6 @@
 import numpy
+import keras
+import keras_resnet.models
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
@@ -24,7 +26,7 @@ def save_model_to_json(model, name='model'):
 
 def load_model_from_json(json_file='model.json', weights_file='model.h5'):
 	## TODO: allow handling of exception if file not found
-	
+
 	# load json and create model
 	json_file = open(json_file, 'r')
 	loaded_model_json = json_file.read()
@@ -55,23 +57,33 @@ def create_model(X_train, y_train, X_test, y_test, epochs, batch_size, callback_
 		model.add(Conv2D(128, (3, 3), activation='relu'))
 		model.add(MaxPooling2D(pool_size=(2, 2)))
 		model.add(Flatten())
-		model.add(Dropout(0.5))
+		model.add(Dropout(0.25))
 		model.add(Dense(512, activation='relu'))
-		model.add(Dropout(0.5))
 		model.add(Dense(256, activation='relu'))
-		model.add(Dropout(0.5))
 		model.add(Dense(num_classes, activation='softmax'))
 		# Compile model
 		model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 		return model
 
-	model = init_model()
+	def resnet_model():
+		num_classes = y_test.shape[1]
+		img_width = X_train.shape[2]
+		img_height = X_train.shape[3]
+		shape, classes = (1, img_width, img_height), num_classes
+
+		x = keras.layers.Input(shape)
+		model = keras_resnet.models.ResNet18(x, classes=classes)
+		model.compile("adam", "categorical_crossentropy", ["accuracy"])
+		return model
+
+	model = resnet_model()
+	# model = init_model()
 
 	hist = model.fit(
-		X_train, 
-		y_train, 
-		validation_data=(X_test, y_test), 
-		epochs=epochs, 
+		X_train,
+		y_train,
+		validation_data=(X_test, y_test),
+		epochs=epochs,
 		batch_size=batch_size,
 		callbacks=callback_fn
 	)
