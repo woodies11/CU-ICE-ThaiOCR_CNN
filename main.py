@@ -9,6 +9,7 @@ from keras.utils import np_utils
 from keras.callbacks import EarlyStopping
 import sys
 import argparse
+import predictor
 
 # TODO: export config so git won't kill us
 load = True
@@ -137,73 +138,7 @@ else:
 
 # ======== TEST PREDICTION ==========
 
-from scipy import misc
-import os
-import imageutil
-
-sample_path = 'th_samples'
-
-paths = os.listdir(sample_path)
-
-
-# (count, right)
-classes_dict = {chr(i):[0,0] for i in range(ord('ก'), ord('ฮ')+1)}
-
-correct_count = 0
-test_data_count = 0
-subplot_num = 0
-
-for img_path in paths:
-
-	# ignore system files
-	if(img_path.startswith('.')):
-		continue	
-
-	test_data_count += 1
-	subplot_num += 1
-
-	if subplot_num <= 9:
-		plt.subplot(3, 3, subplot_num)
-	else:
-		subplot_num = 0
-		plt.figure()
-
-	img = imageutil.readimageinput(sample_path+'/'+img_path, True, False, 0.1, size=(128,128))
-
-	ans = img_path.split('.')[0].split('-')[0].split(' ')[0]
-
-	pred = model.predict_classes(img)
-
-	pred_proba = model.predict_proba(img)
-	pred_proba = "%.2f%%" % (pred_proba[0][pred]*100)
-
-	pred_class = classes[pred[0]]
-
-	is_correct = str(pred_class) == str(ans)
-
-	classes_dict[ans][0] += 1
-	if is_correct:
-		correct_count += 1
-		classes_dict[ans][1] += 1
-
-	result_sum = "ans: {} predicted: {} with probability {} | {}".format(str(ans), str(pred_class), pred_proba, "correct" if is_correct else "INCORRECT")
-
-	print(result_sum)
-
-	plt.title("pred: {}".format(pred_class), fontproperties='Tahoma', color='black' if is_correct else 'red')
-
-classes_acc = {k:(classes_dict[k][1]/classes_dict[k][0] if classes_dict[k][0] > 0 else 0) for k in classes_dict}
-print(classes_acc)
-print('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
-
-fig = plt.figure()
-ax = fig.gca()
-d = classes_acc
-X = numpy.arange(len(d))
-plt.bar(X, d.values(), align='center', width=0.5)
-plt.xticks(X, d.keys(), fontname='Tahoma')
-plt.ylim(0, 1.2)
-plt.show()
-
+# Use the model to predict all known samples and evaluate.
+predictor.evaluate(model)
 
 
