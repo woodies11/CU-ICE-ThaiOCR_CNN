@@ -47,9 +47,9 @@ numpy.random.seed(numpy_seed)
 classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
 
 #batch_size to train
-batch_size = 100
+batch_size = 50
 # number of epochs to train
-nb_epoch = 20
+nb_epoch = 50
 
 
 # ------------------------------------------------------------------------
@@ -57,10 +57,11 @@ nb_epoch = 20
 
 if load:
 	model = cnnmodel.load_model_from_json(model_name+'.json', model_name+'.h5')
-	print('model loaded from disk')
+	print('MODEL LOADED FROM DISK.')
 
 else:
 	# load our image data
+	print("START BUILDING MODEL...")
 	X_set, _y_set = traindata.load_image_data(num_of_set)
 
 	# convert our label to one-hot-encoded matrix
@@ -79,7 +80,7 @@ else:
 
 	img_width = X_set.shape[1]
 	img_height = X_set.shape[2]
-	print("Images are of {}x{} size.".format(img_width, img_height))
+	print("\tImages are of {}x{} size.".format(img_width, img_height))
 
 	# reshape to be [samples][layer (black)][x][y]
 	X_train = X_train.reshape(X_train.shape[0], 1, img_width, img_height).astype('float32')
@@ -87,7 +88,7 @@ else:
 	# normalize inputs from 0-255 to 0-1
 	X_train = X_train / 255
 	X_test = X_test / 255
-	print('fitting model')
+	print('\t\tfitting model')
 	early_stopping_monitor = EarlyStopping(patience=30)
 	model,hist = cnnmodel.create_model(
 		X_train, 
@@ -132,7 +133,7 @@ else:
 
 	# evaluation of the model
 	scores = model.evaluate(X_test, y_test, verbose=0)
-	print("CNN Error: %.2f%%" % (100-scores[1]*100))
+	print("\t\tCNN Error: %.2f%%" % (100-scores[1]*100))
 
 
 
