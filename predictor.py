@@ -7,6 +7,23 @@ import numpy as np
 
 sample_path = 'th_samples'
 
+def showclasshist(classes_acc):
+	fig = plt.figure()
+	ax = fig.gca()
+	d = classes_acc
+	X = np.arange(len(d))
+	C = [
+		'g' if classes_acc[k] >= 0.7 else 
+		('y' if classes_acc[k] >= 0.5 else 'r') 
+		for k in classes_acc
+	]
+	plt.bar(X, d.values(), color=C, align='center', width=0.5)
+	plt.axhline(0.7, color='g', linestyle='dashed', linewidth=1)
+	plt.axhline(0.5, color='y', linestyle='dashed', linewidth=1)
+	plt.xticks(X, d.keys(), fontname='Tahoma')
+	plt.ylim(0, 1.1)
+	plt.show()
+
 def evaluate(model):
 
 	paths = os.listdir(sample_path)
@@ -74,22 +91,8 @@ def evaluate(model):
 	classes_acc = {k:(classes_dict[k][1]/classes_dict[k][0] if classes_dict[k][0] > 0 else 0) for k in classes_dict}
 	print(classes_acc)
 	print('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
+	showclasshist(classes_acc)
 
-	fig = plt.figure()
-	ax = fig.gca()
-	d = classes_acc
-	X = np.arange(len(d))
-	C = [
-		'g' if classes_acc[k] >= 0.7 else 
-		('y' if classes_acc[k] >= 0.5 else 'r') 
-		for k in classes_acc
-	]
-	plt.bar(X, d.values(), color=C, align='center', width=0.5)
-	plt.axhline(0.7, color='g', linestyle='dashed', linewidth=1)
-	plt.axhline(0.5, color='y', linestyle='dashed', linewidth=1)
-	plt.xticks(X, d.keys(), fontname='Tahoma')
-	plt.ylim(0, 1.1)
-	plt.show()
 
 if __name__ == "__main__":
 	model_name = 'model_all_char'
