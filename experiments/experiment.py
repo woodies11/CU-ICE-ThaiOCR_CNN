@@ -57,7 +57,7 @@ class Experiment(object):
         raise NotImplementedError
 
     @staticmethod
-    def _model_name_from_parameters(**kwargs):
+    def _model_name_from_parameters(batch_size, epochs, **kwargs):
         """
         Use to create a name for saving model.
         Note that this name should be able to uniquely
@@ -69,7 +69,7 @@ class Experiment(object):
         raise NotImplementedError
 
     @staticmethod
-    def __try_load_for_continuation(**kwargs):
+    def __try_load_for_continuation(batch_size, epochs, **kwargs):
         """
         This method try to load the most recent model, if exist,
         that can be continued from for this parameters.
@@ -86,13 +86,14 @@ class Experiment(object):
         -----
         The method must return
 
-        (model, **new_kwargs)
+        (model, batch_size, epochs, **new_kwargs)
 
         model - the loaded model,
+        batch_size, epochs - new batch_size and epochs
         **new_kwargs - kwargs needed for continuation
 
         """
-        return (None, **kwargs)
+        return (None, batch_size, epochs, **kwargs)
 
     @staticmethod
     def predict(model, test_sample, **kwargs):
@@ -117,18 +118,17 @@ class Experiment(object):
         """
         raise NotImplementedError
 
-    # ====================================================
     # These are chained call by the internal methods.
     # You should override these to implement your own
     # function but SHOULD NOT CALL THEM YOURSELF.
     # Let the internal methods call them.
 
     @staticmethod
-    def _createmodel(X_train, y_train, X_test, y_test, **kwargs):
+    def _createmodel(X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
         raise NotImplementedError
 
     @staticmethod
-    def _fitmodel(X_train, y_train, X_test, y_test, model, **kwargs):
+    def _fitmodel(model, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
         raise NotImplementedError
 
 
@@ -257,7 +257,7 @@ class Experiment(object):
     # YOU SHOULD NOT OVERRIDE THESE!
     
     @staticmethod
-    def __internal_createmodel(dataset, **kwargs):
+    def __internal_createmodel(dataset, batch_size, epochs, **kwargs):
         """
         note that dataset are in from of (X_train, y_train, X_test, y_test)
         we expand it into X_train, y_train, X_test, y_test for our function
@@ -266,16 +266,16 @@ class Experiment(object):
         return Experiment._createmodel(*dataset, **kwargs)
 
     @staticmethod
-    def __internal_fitmodel(dataset, model, **kwargs):
+    def __internal_fitmodel(model, dataset, batch_size, epochs, **kwargs):
         """
         note that dataset are in from of (X_train, y_train, X_test, y_test)
         we expand it into X_train, y_train, X_test, y_test for our function
         for easier use
         """
-        return Experiment._fitmodel(*dataset, model, **kwargs)
+        return Experiment._fitmodel(model, *dataset, batch_size, epochs, **kwargs)
 
     @staticmethod
-    def run(dataset, test_samples, allow_continuation=True, **kwargs):
+    def run(dataset, test_samples, batch_size, epochs, allow_continuation=True, **kwargs):
         """
         Run the experiment using the given parameters.
 

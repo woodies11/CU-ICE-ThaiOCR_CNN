@@ -1,13 +1,12 @@
+import Experiment
 
-iterations = [
-    {"batch": 50, "epochs": range(1, 11)},
-    {"batch": 100, "epochs": 2},
-    {"batch": 100, "epochs": 3},
-]
+class MNISTSET(Experiment):
 
-def setup(dataset, **kwargs):
-    batch=kwargs["batch"]
-    epochs=kwargs["epochs"]
+    @staticmethod
+    def _model_from_json(json, **kwargs):
+        return model = model_from_json(json)
 
-def teardown():
-    pass
+    @staticmethod
+    def _model_name_from_parameters(**kwargs):
+        batch_size = kwargs['batch_size']
+        epochs = kwargs['epoch']
