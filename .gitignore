@@ -124,3 +124,7 @@ model_*
 
 saved_model/
 *.h5
+
+# logs
+logs
+*/logs
