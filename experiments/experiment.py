@@ -1,22 +1,28 @@
-import logging, os
+import logging, os, glob
 from keras.models import model_from_json
 import matplotlib.pyplot as plt
 import numpy as np
+import re
+from pathlib import Path
 
-def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
+def setup_logger(name, log_file, level=logging.DEBUG, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
 
+    # create a file handler to write to file
     formatter = logging.Formatter(format)
     handler = logging.FileHandler(log_file)        
     handler.setFormatter(formatter)
 
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
-    # also print to console
+    # and also print to console
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    # clear previously register handler first
+    logger.handler = []
+    logger.addHandler(handler)
     logger.addHandler(console_handler)
 
     return logger
@@ -24,6 +30,11 @@ def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(m
 def makedirifnotexist(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+def listdir_nohidden(path):
+	directories = glob.glob(path+'/**/*', recursive=True)
+	return [file for file in directories if os.path.isfile(file)]
+
 
 #################################################################################################
 # Experiment Class start here:
@@ -50,12 +61,14 @@ class Experiment(object):
         self.MODEL_DIRECTORY = "./experiments/models/{}/".format(self.INSTANCE_NAME)
         self.RESULT_STATISTIC_DIRECTORY = "./experiments/results/{}/".format(self.INSTANCE_NAME)
 
+        self.NAME_FORMAT = "{}_b{}_e{}-model"
+
         makedirifnotexist(self.MODEL_DIRECTORY)
         makedirifnotexist(self.RESULT_STATISTIC_DIRECTORY)
         makedirifnotexist("./experiments/logs/")
 
-        self.result_logger = setup_logger(self.INSTANCE_NAME, "./experiments/logs/results.txt")
-        self.general_logger = setup_logger(self.INSTANCE_NAME, "./experiments/logs/experiments.txt")
+        self.result_logger = setup_logger(self.INSTANCE_NAME+"-result", "./experiments/logs/results.txt")
+        self.general_logger = setup_logger(self.INSTANCE_NAME+"-general", "./experiments/logs/experiments.txt")
 
     # ========================================================================================================
     # These MUST BE OVERRIDDEN and IMPLEMENTED
@@ -73,43 +86,6 @@ class Experiment(object):
         no need to load weight.
         """
         raise NotImplementedError
-
-    def _model_name_from_parameters(self, batch_size, epochs, **kwargs):
-        """
-        Use to create a name for saving model.
-        Note that this name should be able to uniquely
-        identify each set of parameters used to generate
-        the model. 
-        
-        E.g. ResNet18_b100_e10 for ResNet18 batch_size: 100, epochs: 10
-        """
-        raise NotImplementedError
-
-    def __try_load_for_continuation(self, batch_size, epochs, **kwargs):
-        """
-        This method try to load the most recent model, if exist,
-        that can be continued from for this parameters.
-
-        For example, if kwargs = [batch_size: 100, epochs: 10]
-        and we already have a saved model from [batch_size: 100, epochs: 7]
-        then that model will be loaded and return along with new parameters
-        [batch_size: 100, epochs: 3], where epochs = 3 because 10 - 7 = 3.
-        That is, we need 3 more epochs to reach overall epochs of 10.
-
-        Since each network may need different parameter, the default implemnetation
-        return None so the model will always be created from scratch.
-
-        -----
-        The method must return
-
-        (model, batch_size, epochs, new_kwargs)
-
-        model - the loaded model,
-        batch_size, epochs - new batch_size and epochs
-        new_kwargs - kwargs needed for continuation
-
-        """
-        return (None, batch_size, epochs, kwargs)
 
     def predict(self, model, test_sample, **kwargs):
         """
@@ -143,6 +119,9 @@ class Experiment(object):
     # function but SHOULD NOT CALL THEM YOURSELF.
     # Let the internal methods call them.
 
+    def _compilemodel(self, model, **kwargs):
+        raise NotImplementedError
+
     def _createmodel(self, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
         raise NotImplementedError
 
@@ -156,6 +135,87 @@ class Experiment(object):
     # These are handy default implementation. You can override these if needed.
     # ========================================================================================================
     
+    def _model_name_from_parameters(self, batch_size, epochs, **kwargs):
+        """
+        Use to create a name for saving model.
+        Note that this name should be able to uniquely
+        identify each set of parameters used to generate
+        the model. 
+        
+        E.g. ResNet18_b100_e10-model for ResNet18 batch_size: 100, epochs: 10
+
+        DEFAULT:
+        -------- 
+        return the experiment name in lower case + "_b<batch_size>_e<epochs>-model"
+        """
+        name = self.INSTANCE_NAME.replace(' ', '_').lower()
+        return self.NAME_FORMAT.format(name, batch_size, epochs)
+
+    def __try_load_for_continuation(self, batch_size, epochs, **kwargs):
+        """
+        This method try to load the most recent model, if exist,
+        that can be continued from for this parameters.
+
+        For example, if kwargs = [batch_size: 100, epochs: 10]
+        and we already have a saved model from [batch_size: 100, epochs: 7]
+        then that model will be loaded and return along with new parameters
+        [batch_size: 100, epochs: 3], where epochs = 3 because 10 - 7 = 3.
+        That is, we need 3 more epochs to reach overall epochs of 10.
+
+        The default implementation will only for default name format ending with
+        "_b<batch_size>_e<epochs>-model"
+
+        -----
+        The method must return
+
+        (model, batch_size, epochs, new_kwargs)
+
+        model - the loaded model,
+        batch_size, epochs - new batch_size and epochs
+        new_kwargs - kwargs needed for continuation
+
+        """
+
+        existing_models = listdir_nohidden(self.MODEL_DIRECTORY)
+
+        # make a regex that extract all epochs given the number of
+        # batch size
+        regex = self.NAME_FORMAT.format("", batch_size, "([0-9]*)")
+        matcher = re.compile(regex)
+
+        available_epochs = [
+            int(matcher.search(x).group(1)) 
+            for x in existing_models 
+            if matcher.search(x) is not None
+        ]
+
+        self.general_logger.debug(available_epochs)
+
+        if len(available_epochs) <= 0:
+            self.general_logger.info("NO CONTINUABLE MODEL AVAILABLE.")
+            return (None, batch_size, epochs, kwargs)
+
+        _the_epochs = max(available_epochs)
+        self.general_logger.debug("MAX EPOCHS: {}".format(_the_epochs))
+        if _the_epochs > epochs:
+            available_epochs = available_epochs.sort()
+            _the_epochs = -1
+            for ep in available_epochs:
+                if ep >= epochs:
+                    break
+                if ep > _the_epochs:
+                    _the_epochs = ep
+            
+            if _the_epochs == -1:
+                return (None, batch_size, epochs, kwargs)
+
+        model_name_to_load = self._model_name_from_parameters(batch_size, _the_epochs, **kwargs)
+        loaded_model = self.loadmodel_from_name(model_name_to_load)
+
+        self.general_logger.info("Load {} from disk to continue up to {}".format(model_name_to_load, epochs))
+
+        return (loaded_model, batch_size, epochs - _the_epochs, kwargs)
+
     def savemodel(self, model, name, directory=None, **kwargs):
         """
         Save model as <name>.json and <name>.h5 to directory.
@@ -228,6 +288,8 @@ class Experiment(object):
         # the model from JSON
         model = self._model_from_json(loaded_model_json, **kwargs)
 
+        model = self._compilemodel(model, **kwargs)
+
         # load weights into new model
         model.load_weights(weights_file)
 
@@ -292,7 +354,7 @@ class Experiment(object):
         """
         return self._fitmodel(model, *dataset, batch_size, epochs, **kwargs)
 
-    def run(self, dataset, test_samples, batch_size, epochs, allow_continuation=True, **kwargs):
+    def run(self, dataset, test_samples, batch_size, epochs, allow_continuation=True, force_recreate=False, **kwargs):
         """
         Run the experiment using the given parameters.
 
@@ -302,11 +364,27 @@ class Experiment(object):
         dataset must be in the form of (X_train, y_train, X_test, y_test)
         """
 
+        # You need to make sure that model name is generated
+        # before loading for continuation otherwise the name
+        # will be using an altered epochs!
         model_name = self._model_name_from_parameters(batch_size, epochs, **kwargs)
 
-        model = None
+        if not force_recreate:
+            directory = self.MODEL_DIRECTORY
+            # make sure directory path ended with the last / 
+            if not directory.endswith('/'):
+                directory = directory + '/'
 
-        if allow_continuation:
+            # if model already exist, skip
+            my_file = Path(directory+model_name)
+            if my_file.exists():
+                self.general_logger.info("MODEL ALREADY EXIST, SKIPPING...")
+                return
+
+            model = None
+
+        if allow_continuation and not force_recreate:
+            
             #try to load the any existing model that can be continue from
             (model, new_batch_size, new_epochs, new_kwargs) = self.__try_load_for_continuation(batch_size, epochs, **kwargs)
 
@@ -318,6 +396,7 @@ class Experiment(object):
             epochs = new_epochs
         else:
             # create the model from scratch
+            self.general_logger.info("LOAD FOR CONTINUATION FAILED. CREATING FROM SCRATCH...")
             model = self.__internal_createmodel(dataset, batch_size, epochs, **kwargs)
 
         # (continue) fitting model
@@ -332,5 +411,3 @@ class Experiment(object):
 
         # generate and save plot
         self._generate_bar_char_img(classes_acc, model_name)
-
-

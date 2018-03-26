@@ -1,5 +1,5 @@
 from .experiment import Experiment
-import glob
+import glob, os
 import numpy
 from keras.models import Sequential
 from keras.layers import Dense
@@ -28,15 +28,6 @@ class MNISTNET(Experiment):
 
     def _model_from_json(self, json, **kwargs):
         return model_from_json(json)
-
-    def _model_name_from_parameters(self, batch_size, epochs, **kwargs):
-        name_format = "{}-b{}-e{}-model"
-        name = MNISTNET.EXPERIMENT_NAME.replace(' ', '_').lower()
-        return name_format.format(name, batch_size, epochs)
-
-    def __try_load_for_continuation(self, batch_size, epochs, **kwargs):
-        # TODO: will implement
-        return (None, batch_size, epochs, kwargs)
 
     def predict(self, model, test_sample, **kwargs):
         pred = model.predict_classes(test_sample)
@@ -108,3 +99,7 @@ class MNISTNET(Experiment):
             batch_size=batch_size,
             callbacks=[]
 	    )
+
+    def _compilemodel(self, model, **kwargs):
+        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        return model
