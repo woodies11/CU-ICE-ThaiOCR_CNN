@@ -2,6 +2,7 @@ import logging, os
 import traindata
 import traceback
 import numpy as np
+import gc
 
 def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
@@ -21,22 +22,32 @@ def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(m
 
     return logger
 
-general_logger = setup_logger("general", "logs/general.txt", logging.DEBUG)
-result_logger = setup_logger("result", "logs/result.txt", logging.INFO)
-
 def run(experiments, should_train_model=True, should_generate_statistic=True, forcecreate=False, debug_mode=False):
 
+    general_logger = setup_logger("general", "logs/general.txt", logging.DEBUG)
+    result_logger = setup_logger("result", "logs/result.txt", logging.INFO)
+
     def run_experiment(exp_class, dataset, batch_size, epochs):
+
+        exp_name = "-b{}".format(batch_size)
+        if debug_mode:
+            exp_name += "-debug"
+
         # create a new Experiment object
-        experiment = exp_class()
+        experiment = exp_class(namesuffix=exp_name)
         general_logger.info("Starting experiment {} | batch_size: {} epochs: {}".format(experiment.EXPERIMENT_NAME, batch_size, epochs))
 
         # Start the experiment
         experiment.run(dataset, batch_size, epochs)
 
     def gen_statistic(exp_class, test_samples, batch_size):
+
+        exp_name = "-b{}".format(batch_size)
+        if debug_mode:
+            exp_name += "-debug"
+
         # create a new Experiment object
-        experiment = exp_class()
+        experiment = exp_class(namesuffix=exp_name)
         general_logger.info("Start generating statistic for experiment {} | batch_size: {} epochs: {}".format(experiment.EXPERIMENT_NAME, batch_size, epochs))
 
         # Generate statistic
@@ -59,11 +70,20 @@ def run(experiments, should_train_model=True, should_generate_statistic=True, fo
                 exp_class = exp["experiment"]
                 batch_size = exp["batch_size"]
                 epochs = exp["epochs"]
-                run_experiment(exp_class, dataset, batch_size, epochs)
+
+                if type(batch_size) is range:
+                    for b in batch_size:
+                        run_experiment(exp_class, dataset, b, epochs)
+                else:
+                    run_experiment(exp_class, dataset, batch_size, epochs)
             except Exception as e:
                 # send to log that something went wrong
                 general_logger.error("Oops! something went wrong: {}: {} \n {}".format(e.__class__, str(e), traceback.format_tb(e.__traceback__)))
                 traceback.print_tb(e.__traceback__)
+
+        # free up memory
+        dataset = None
+        gc.collect()
 
 
     if should_generate_statistic:
@@ -79,12 +99,21 @@ def run(experiments, should_train_model=True, should_generate_statistic=True, fo
                 exp_class = exp["experiment"]
                 batch_size = exp["batch_size"]
                 epochs = exp["epochs"]
-                gen_statistic(exp_class, test_samples, batch_size)
+
+                if type(batch_size) is range:
+                    for b in batch_size:
+                        gen_statistic(exp_class, test_samples, b)
+                else:
+                    gen_statistic(exp_class, test_samples, batch_size)
 
             except Exception as e:
                 # send to log that something went wrong
                 general_logger.error("Oops! something went wrong: {}: {} \n {}".format(e.__class__, str(e), traceback.format_tb(e.__traceback__)))
                 traceback.print_tb(e.__traceback__)
+        
+        # free up memory
+        test_samples = None
+        gc.collect()
 
 if __name__ == "__main__":
     import argparse

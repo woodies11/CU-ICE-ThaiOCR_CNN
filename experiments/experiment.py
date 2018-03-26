@@ -57,8 +57,8 @@ class Experiment(object):
 
     CLASSES = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
 
-    def __init__(self, nameprefix=""):
-        self.INSTANCE_NAME = nameprefix + self.EXPERIMENT_NAME
+    def __init__(self, nameprefix="", namesuffix=""):
+        self.INSTANCE_NAME = nameprefix + self.EXPERIMENT_NAME + namesuffix
 
         # dafault directory to save models
         self.MODEL_DIRECTORY = "./experiments/models/{}/".format(self.INSTANCE_NAME)
@@ -114,12 +114,11 @@ class Experiment(object):
     # These are handy default implementation. You can override these if needed.
     # ========================================================================================================
 
-    def _fitmodel(self, model, X_train, y_train, X_test, y_test, batch_size, epochs, callbacks=[], **kwargs):
+    def _fitmodel(self, model, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
         name = self.INSTANCE_NAME.replace(' ', '_').lower()
         formatted_name="{}-b{}-e{}-va{}.h5".format(name, batch_size, "{epoch:02d}", "{val_acc:.2f}")
         filepath = self.MODEL_DIRECTORY + formatted_name
         checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=False, mode='max')
-        callbacks.append(checkpoint)
         
         hist = model.fit(
             X_train, 
@@ -127,7 +126,7 @@ class Experiment(object):
             validation_data=(X_test, y_test), 
             epochs=epochs, 
             batch_size=batch_size,
-            callbacks=callbacks
+            callbacks=[checkpoint]
 	    )
 
     def _model_name_from_parameters(self, batch_size, **kwargs):
@@ -287,11 +286,13 @@ class Experiment(object):
 
         model = self.__internal_createmodel(dataset, batch_size, epochs, **kwargs)
 
+        # save this model (h5 files are saved using fitting checkpoints)
+        self.savemodel(model, model_name, **kwargs)
+
         # start fitting model
         self.__internal_fitmodel(model, dataset, batch_size, epochs, **kwargs)
         
-        # save this model (h5 files are already saved using fitting checkpoints)
-        self.savemodel(model, model_name, **kwargs)
+        
 
     def gen_statistic(self, test_samples, batch_size, **kwargs):
         self.generate_all_bar_chars(test_samples, batch_size, **kwargs)
