@@ -24,6 +24,11 @@ def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(m
 general_logger = setup_logger("general", "logs/general.txt", logging.DEBUG)
 result_logger = setup_logger("result", "logs/result.txt", logging.INFO)
 
+
+def unittestexperiment(experiment):
+    pass
+
+
 def run():
     for experiment in experiments:
         # Wrap everthing in try catch so our test
