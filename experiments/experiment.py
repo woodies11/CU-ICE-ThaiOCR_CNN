@@ -98,20 +98,26 @@ class Experiment(object):
     @staticmethod
     def predict(model, test_sample, **kwargs):
         """
-        Should return the most probable class of the given sample.
+        Should return the prediction in whatever format evaluate() will use.
         """
         raise NotImplementedError
 
     @staticmethod
     def evaluate(model, test_samples, **kwargs):
         """
+
+        test_samples should be in format:
+        [
+            'ก': [ImgObject],
+            'ข': [ImgObject],
+            ...
+        ]
+
         Should return classes_acc in the format:
         [
             'ก': 0.90,
             'ข': 0.75,
-            .
-            .
-            .
+            ...
         ]
 
         where the key is the class and the value is the accuracy from 100%
