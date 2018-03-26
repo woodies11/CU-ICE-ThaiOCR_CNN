@@ -48,7 +48,7 @@ classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
 #batch_size to train
 batch_size = 100
 # number of epochs to train
-nb_epoch = 10
+nb_epoch = 1
 
 
 # ------------------------------------------------------------------------
@@ -157,7 +157,6 @@ classes_dict = {chr(i):[0,0] for i in range(ord('ก'), ord('ฮ')+1)}
 
 correct_count = 0
 test_data_count = 0
-subplot_num = 0
 
 for folder_path in folder_paths:
 	for img_full_path in listdir_nohidden(folder_path):
@@ -168,15 +167,8 @@ for folder_path in folder_paths:
 			continue	
 
 		test_data_count += 1
-		subplot_num += 1
 
-		if subplot_num <= 9:
-			plt.subplot(3, 3, subplot_num)
-		else:
-			subplot_num = 0
-			plt.figure()
-
-		img = imageutil.readimageinput(img_full_path, True, False, 0.1, size=(128,128))
+		img = imageutil.readimageinput(img_full_path, False, False, 0.1, size=(128,128))
 
 		ans = folder_name.split('.')[0].split('-')[0].split(' ')[0]
 
@@ -209,10 +201,18 @@ fig = plt.figure()
 ax = fig.gca()
 d = classes_acc
 X = numpy.arange(len(d))
-plt.bar(X, d.values(), align='center', width=0.5)
+C = [
+	'g' if classes_acc[k] >= 0.7 else 
+	('y' if classes_acc[k] >= 0.5 else 'r') 
+	for k in classes_acc
+]
+plt.bar(X, d.values(), color=C, align='center', width=0.5)
+plt.axhline(0.7, color='g', linestyle='dashed', linewidth=1)
+plt.axhline(0.5, color='y', linestyle='dashed', linewidth=1)
 plt.xticks(X, d.keys(), fontname='Tahoma')
-plt.ylim(0, 1.2)
+plt.ylim(0, 1.1)
 plt.show()
+
 
 
 

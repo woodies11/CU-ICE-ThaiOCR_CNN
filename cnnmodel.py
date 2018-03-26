@@ -31,7 +31,7 @@ def load_model_from_json(json_file='model.json', weights_file='model.h5'):
 	json_file = open(json_file, 'r')
 	loaded_model_json = json_file.read()
 	json_file.close()
-	model = model_from_json(loaded_model_json)
+	model = model_from_json(loaded_model_json, custom_objects=keras_resnet.custom_objects)
 	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 	# load weights into new model
