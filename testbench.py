@@ -7,7 +7,7 @@ import traceback
 import numpy as np
 
 
-experiments = [RESNET]
+experiments = [MNISTNET, RESNET]
 
 def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""

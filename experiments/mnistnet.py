@@ -24,7 +24,7 @@ class MNISTNET(Experiment):
 
     def predict(self, model, test_sample, classes, **kwargs):
         pred = model.predict_classes(test_sample)
-        pred_class = MNISTNET.classes[pred[0]]
+        pred_class = classes[pred[0]]
         return pred_class
 
     def _createmodel(self, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
