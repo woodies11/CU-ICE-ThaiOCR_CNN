@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import re
 from pathlib import Path
+from keras.callbacks import ModelCheckpoint
 
 def setup_logger(name, log_file, level=logging.DEBUG, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
@@ -61,7 +62,8 @@ class Experiment(object):
         self.MODEL_DIRECTORY = "./experiments/models/{}/".format(self.INSTANCE_NAME)
         self.RESULT_STATISTIC_DIRECTORY = "./experiments/results/{}/".format(self.INSTANCE_NAME)
 
-        self.NAME_FORMAT = "{}_b{}_e{}-model"
+        self.BASE_NAME_FORMAT = "{}_b{}-model"
+        self.NAME_FORMAT = self.BASE_NAME_FORMAT.format("{}", "{}_e{}")
 
         makedirifnotexist(self.MODEL_DIRECTORY)
         makedirifnotexist(self.RESULT_STATISTIC_DIRECTORY)
@@ -125,17 +127,29 @@ class Experiment(object):
     def _createmodel(self, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
         raise NotImplementedError
 
-    def _fitmodel(self, model, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
-        raise NotImplementedError
-
-
     #########################################################################################################
 
     # ========================================================================================================
     # These are handy default implementation. You can override these if needed.
     # ========================================================================================================
-    
-    def _model_name_from_parameters(self, batch_size, epochs, **kwargs):
+
+    def _fitmodel(self, model, X_train, y_train, X_test, y_test, batch_size, epochs, callbacks=[], **kwargs):
+        name = self.INSTANCE_NAME.replace(' ', '_').lower()
+        formatted_name="{}-b{}-e{}-va{}.h5".format(name, batch_size, "{epoch:02d}", "{val_acc:.2f}")
+        filepath = self.MODEL_DIRECTORY + formatted_name
+        checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=False, mode='max')
+        callbacks.append(checkpoint)
+        
+        hist = model.fit(
+            X_train, 
+            y_train, 
+            validation_data=(X_test, y_test), 
+            epochs=epochs, 
+            batch_size=batch_size,
+            callbacks=callbacks
+	    )
+
+    def _model_name_from_parameters(self, batch_size, **kwargs):
         """
         Use to create a name for saving model.
         Note that this name should be able to uniquely
@@ -146,75 +160,10 @@ class Experiment(object):
 
         DEFAULT:
         -------- 
-        return the experiment name in lower case + "_b<batch_size>_e<epochs>-model"
+        return the experiment name in lower case + "_b<batch_size>-model"
         """
         name = self.INSTANCE_NAME.replace(' ', '_').lower()
-        return self.NAME_FORMAT.format(name, batch_size, epochs)
-
-    def __try_load_for_continuation(self, batch_size, epochs, **kwargs):
-        """
-        This method try to load the most recent model, if exist,
-        that can be continued from for this parameters.
-
-        For example, if kwargs = [batch_size: 100, epochs: 10]
-        and we already have a saved model from [batch_size: 100, epochs: 7]
-        then that model will be loaded and return along with new parameters
-        [batch_size: 100, epochs: 3], where epochs = 3 because 10 - 7 = 3.
-        That is, we need 3 more epochs to reach overall epochs of 10.
-
-        The default implementation will only for default name format ending with
-        "_b<batch_size>_e<epochs>-model"
-
-        -----
-        The method must return
-
-        (model, batch_size, epochs, new_kwargs)
-
-        model - the loaded model,
-        batch_size, epochs - new batch_size and epochs
-        new_kwargs - kwargs needed for continuation
-
-        """
-
-        existing_models = listdir_nohidden(self.MODEL_DIRECTORY)
-
-        # make a regex that extract all epochs given the number of
-        # batch size
-        regex = self.NAME_FORMAT.format("", batch_size, "([0-9]*)")
-        matcher = re.compile(regex)
-
-        available_epochs = [
-            int(matcher.search(x).group(1)) 
-            for x in existing_models 
-            if matcher.search(x) is not None
-        ]
-
-        self.general_logger.debug(available_epochs)
-
-        if len(available_epochs) <= 0:
-            self.general_logger.info("NO CONTINUABLE MODEL AVAILABLE.")
-            return (None, batch_size, epochs, kwargs)
-
-        _the_epochs = max(available_epochs)
-        self.general_logger.debug("MAX EPOCHS: {}".format(_the_epochs))
-        if _the_epochs > epochs:
-            available_epochs = available_epochs.sort()
-            _the_epochs = -1
-            for ep in available_epochs:
-                if ep >= epochs:
-                    break
-                if ep > _the_epochs:
-                    _the_epochs = ep
-            
-            if _the_epochs == -1:
-                return (None, batch_size, epochs, kwargs)
-
-        model_name_to_load = self._model_name_from_parameters(batch_size, _the_epochs, **kwargs)
-        loaded_model = self.loadmodel_from_name(model_name_to_load)
-
-        self.general_logger.info("Load {} from disk to continue up to {}".format(model_name_to_load, epochs))
-
-        return (loaded_model, batch_size, epochs - _the_epochs, kwargs)
+        return self.BASE_NAME_FORMAT.format(name, batch_size)
 
     def savemodel(self, model, name, directory=None, **kwargs):
         """
@@ -237,32 +186,11 @@ class Experiment(object):
             
         # serialize model to JSON
         model_json = model.to_json()
-        with open(directory + name+'.json', 'w') as json_file:
+        with open(directory + name +'.json', 'w') as json_file:
             json_file.write(model_json)
 
-        # serialize weights to HDF5
-        model.save_weights(directory + name+'.h5')
-
         # log
-        self.general_logger.info("MODEL: {} SAVED TO {}.".format(name, directory))
-    
-    def loadmodel_from_name(self, name, directory=None, **kwargs):
-        """
-        Utility method to call loadmodel() using only name and directory.
-        """
-
-        if directory is None:
-            directory = self.MODEL_DIRECTORY
-
-        # make sure directory path ended with the last / 
-        if not directory.endswith('/'):
-            directory = directory + '/'
-
-        base_model_dir = directory + name
-        json_file = base_model_dir+'.json'
-        weights_file = base_model_dir+'.h5'
-
-        return self.loadmodel(json_file, weights_file, *kwargs)
+        self.general_logger.info("MODEL: {} SAVED TO {}".format(name, directory))
 
     def loadmodel(self, json_file, weights_file, **kwargs):
         """
@@ -309,6 +237,10 @@ class Experiment(object):
             title = name
         
         save_path = directory + name
+        # . will mess up savefig
+        # However, the very first one is a legit . for ./PATH so we need to keep it
+        # by ignoring the first, now -, character and add the . back on
+        save_path = "." + save_path.replace(".", "-")[1:]
 
         fig = plt.figure()
         ax = fig.gca()
@@ -328,6 +260,7 @@ class Experiment(object):
 
         # save figure to the save_path
         plt.savefig(save_path)
+        plt.close()
         self.general_logger.info("BAR CHART for {} saved to {}.".format(name, save_path))
 
     # ========================================================================================================
@@ -354,7 +287,7 @@ class Experiment(object):
         """
         return self._fitmodel(model, *dataset, batch_size, epochs, **kwargs)
 
-    def run(self, dataset, test_samples, batch_size, epochs, allow_continuation=True, force_recreate=False, **kwargs):
+    def run(self, dataset, test_samples, batch_size, epochs, **kwargs):
         """
         Run the experiment using the given parameters.
 
@@ -364,50 +297,37 @@ class Experiment(object):
         dataset must be in the form of (X_train, y_train, X_test, y_test)
         """
 
-        # You need to make sure that model name is generated
-        # before loading for continuation otherwise the name
-        # will be using an altered epochs!
-        model_name = self._model_name_from_parameters(batch_size, epochs, **kwargs)
+        model_name = self._model_name_from_parameters(batch_size, **kwargs)
 
-        if not force_recreate:
-            directory = self.MODEL_DIRECTORY
-            # make sure directory path ended with the last / 
-            if not directory.endswith('/'):
-                directory = directory + '/'
+        model = self.__internal_createmodel(dataset, batch_size, epochs, **kwargs)
 
-            # if model already exist, skip
-            my_file = Path(directory+model_name)
-            if my_file.exists():
-                self.general_logger.info("MODEL ALREADY EXIST, SKIPPING...")
-                return
-
-            model = None
-
-        if allow_continuation and not force_recreate:
-            
-            #try to load the any existing model that can be continue from
-            (model, new_batch_size, new_epochs, new_kwargs) = self.__try_load_for_continuation(batch_size, epochs, **kwargs)
-
-        if model is not None:
-            # If able to load model, set kwargs to the new_kwargs for continuation.
-            # Refer to comments in the __try_load_for_continuation() for explanation.
-            kwargs = new_kwargs
-            batch_size = new_batch_size
-            epochs = new_epochs
-        else:
-            # create the model from scratch
-            self.general_logger.info("LOAD FOR CONTINUATION FAILED. CREATING FROM SCRATCH...")
-            model = self.__internal_createmodel(dataset, batch_size, epochs, **kwargs)
-
-        # (continue) fitting model
+        # start fitting model
         self.__internal_fitmodel(model, dataset, batch_size, epochs, **kwargs)
         
-        # save this model
+        # save this model (h5 files are already saved using fitting checkpoints)
         self.savemodel(model, model_name, **kwargs)
 
-        # evaluate model
-        classes_acc = self.evaluate(model, test_samples, **kwargs)
-        self.result_logger.info("CLASSES ACC for model {}: {}".format(model_name, classes_acc))
+        self.generate_all_bar_chars(test_samples, batch_size, **kwargs)
 
-        # generate and save plot
-        self._generate_bar_char_img(classes_acc, model_name)
+    def generate_all_bar_chars(self, test_samples, batch_size, **kwargs):
+
+        directory = self.MODEL_DIRECTORY
+        # make sure directory path ended with the last / 
+        if not directory.endswith('/'):
+            directory = directory + '/'
+
+        model_paths = listdir_nohidden(directory)
+        json_file = directory + self._model_name_from_parameters(batch_size, **kwargs)
+
+        for model_weight in model_paths:
+            if not model_weight.endswith('.h5'):
+                continue
+            model_name = model_weight.split('/')[-1].split('\\')[-1][:-3]
+
+            model = self.loadmodel(json_file, model_weight, **kwargs)
+
+            # evaluate model
+            classes_acc = self.evaluate(model, test_samples, **kwargs)
+
+            # generate and save plot
+            self._generate_bar_char_img(classes_acc, model_name)

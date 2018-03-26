@@ -44,21 +44,20 @@ def run():
 
     for exp in experiments:
 
-        for ep in range(1, 10, 2):
-            # Wrap everthing in try catch so our test
-            # will always continue.
-            # Check the log file for any errors.
-            try:
-                experiment = exp()
-                general_logger.info("Starting experiment {}...".format(experiment.EXPERIMENT_NAME))
+        # Wrap everthing in try catch so our test
+        # will always continue.
+        # Check the log file for any errors.
+        try:
+            experiment = exp()
+            general_logger.info("Starting experiment {}...".format(experiment.EXPERIMENT_NAME))
 
-                # Start each experiment:
-                experiment.run(dataset, test_samples, 100, ep)
+            # Start each experiment:
+            experiment.run(dataset, test_samples, 100, 1)
 
-            except Exception as e:
-                # send to log that something went wrong
-                general_logger.error("Oops! something went wrong: {}: {} \n {}".format(e.__class__, str(e), traceback.format_tb(e.__traceback__)))
-                traceback.print_tb(e.__traceback__)
+        except Exception as e:
+            # send to log that something went wrong
+            general_logger.error("Oops! something went wrong: {}: {} \n {}".format(e.__class__, str(e), traceback.format_tb(e.__traceback__)))
+            traceback.print_tb(e.__traceback__)
 
 
 

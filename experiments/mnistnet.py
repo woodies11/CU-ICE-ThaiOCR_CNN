@@ -90,16 +90,6 @@ class MNISTNET(Experiment):
         model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         return model
 
-    def _fitmodel(self, model, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
-        hist = model.fit(
-            X_train, 
-            y_train, 
-            validation_data=(X_test, y_test), 
-            epochs=epochs, 
-            batch_size=batch_size,
-            callbacks=[]
-	    )
-
     def _compilemodel(self, model, **kwargs):
         model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         return model
