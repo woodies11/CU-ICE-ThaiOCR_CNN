@@ -327,7 +327,7 @@ class Experiment(object):
         self.savemodel(model, model_name, **kwargs)
 
         # evaluate model
-        classes_acc = self.evaluate(model, test_samples, *kwargs)
+        classes_acc = self.evaluate(model, test_samples, **kwargs)
         self.result_logger.info("CLASSES ACC for model {}: {}".format(model_name, classes_acc))
 
         # generate and save plot
