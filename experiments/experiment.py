@@ -223,6 +223,10 @@ class Experiment(object):
         # by ignoring the first, now -, character and add the . back on
         save_path = "." + save_path.replace(".", "-")[1:]
 
+        # Pop the two character we ignored out if exist.
+        classes_acc.pop('ฤ', None)
+        classes_acc.pop('ฦ', None)
+
         fig = plt.figure()
         ax = fig.gca()
         d = classes_acc
