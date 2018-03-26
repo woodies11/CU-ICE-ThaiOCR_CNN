@@ -55,6 +55,8 @@ class Experiment(object):
 
     ################################################
 
+    CLASSES = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
+
     def __init__(self, nameprefix=""):
         self.INSTANCE_NAME = nameprefix + self.EXPERIMENT_NAME
 
@@ -89,30 +91,9 @@ class Experiment(object):
         """
         raise NotImplementedError
 
-    def predict(self, model, test_sample, **kwargs):
+    def predict(self, model, test_sample, classes, **kwargs):
         """
         Should return the prediction in whatever format evaluate() will use.
-        """
-        raise NotImplementedError
-
-    def evaluate(self, model, test_samples, **kwargs):
-        """
-
-        test_samples should be in format:
-        [
-            'ก': [ImgObject],
-            'ข': [ImgObject],
-            ...
-        ]
-
-        Should return classes_acc in the format:
-        [
-            'ก': 0.90,
-            'ข': 0.75,
-            ...
-        ]
-
-        where the key is the class and the value is the accuracy from 100%
         """
         raise NotImplementedError
 
@@ -224,7 +205,7 @@ class Experiment(object):
         # return the ready-to-use model
         return model
 
-    def _generate_bar_char_img(self, classes_acc, name, directory=None, title=None):
+    def _generate_bar_char_img(self, classes_acc, name, directory=None, title=None, xlabel=""):
 
         if directory is None:
             directory = self.RESULT_STATISTIC_DIRECTORY
@@ -251,17 +232,18 @@ class Experiment(object):
             ('y' if classes_acc[k] >= 0.5 else 'r') 
             for k in classes_acc
         ]
+        plt.title(title)
+        plt.xlabel(xlabel)
         plt.bar(X, d.values(), color=C, align='center', width=0.5)
         plt.axhline(0.7, color='g', linestyle='dashed', linewidth=1)
         plt.axhline(0.5, color='y', linestyle='dashed', linewidth=1)
         plt.xticks(X, d.keys(), fontname='Tahoma')
         plt.ylim(0, 1.1)
-        plt.title = title
 
         # save figure to the save_path
         plt.savefig(save_path)
         plt.close()
-        self.general_logger.info("BAR CHART for {} saved to {}.".format(name, save_path))
+        self.general_logger.info("STATISTIC: Bar chart for {} saved to {}".format(name, save_path))
 
     # ========================================================================================================
     # These SHOULD NOT BE OVERRIDDEN
@@ -287,7 +269,7 @@ class Experiment(object):
         """
         return self._fitmodel(model, *dataset, batch_size, epochs, **kwargs)
 
-    def run(self, dataset, test_samples, batch_size, epochs, **kwargs):
+    def run(self, dataset, batch_size, epochs, **kwargs):
         """
         Run the experiment using the given parameters.
 
@@ -307,6 +289,7 @@ class Experiment(object):
         # save this model (h5 files are already saved using fitting checkpoints)
         self.savemodel(model, model_name, **kwargs)
 
+    def gen_statistic(self, test_samples, batch_size, **kwargs):
         self.generate_all_bar_chars(test_samples, batch_size, **kwargs)
 
     def generate_all_bar_chars(self, test_samples, batch_size, **kwargs):
@@ -327,7 +310,46 @@ class Experiment(object):
             model = self.loadmodel(json_file, model_weight, **kwargs)
 
             # evaluate model
-            classes_acc = self.evaluate(model, test_samples, **kwargs)
+            classes_acc, overall_acc, correct_count, test_data_count = self.evaluate(model, test_samples, **kwargs)
+            xlabel = '{}/{} correct ({})'.format(correct_count, test_data_count, overall_acc)
 
             # generate and save plot
-            self._generate_bar_char_img(classes_acc, model_name)
+            self._generate_bar_char_img(classes_acc, model_name, xlabel=xlabel)
+
+    def __internal_predict(self, model, test_sample, **kwargs):
+        classes = Experiment.CLASSES
+        return self.predict(model, test_sample, classes, **kwargs)
+
+    def evaluate(self, model, test_samples, **kwargs):
+
+        # { character : [count, right] }
+        classes_dict = {chr(i):[0,0] for i in range(ord('ก'), ord('ฮ')+1)}
+
+        correct_count = 0
+        test_data_count = 0
+
+        for class_key in test_samples:
+            samples = test_samples[class_key]
+            test_data_count += len(samples)
+            for img in samples:
+
+                pred_class = self.__internal_predict(model, img)
+
+                is_correct = str(pred_class) == str(class_key)
+
+                classes_dict[class_key][0] += 1
+                if is_correct:
+                    correct_count += 1
+                    classes_dict[class_key][1] += 1
+
+        # -- end outer for --
+
+        # prevent divide by zero so test can continue
+        if test_data_count == 0:
+            test_data_count = -1
+
+        classes_acc = {k:(classes_dict[k][1]/classes_dict[k][0] if classes_dict[k][0] > 0 else 0) for k in classes_dict}
+        overall_acc = correct_count/test_data_count
+        self.general_logger.info('{}/{} correct ({})'.format(correct_count, test_data_count, overall_acc))
+        
+        return classes_acc, overall_acc, correct_count, test_data_count

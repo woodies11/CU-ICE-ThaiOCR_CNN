@@ -1,12 +1,13 @@
 import logging, os
 from experiments.mnistnet import MNISTNET
+from experiments.resnet import RESNET
 import traindata
 import imageutil
 import traceback
 import numpy as np
 
 
-experiments = [MNISTNET]
+experiments = [RESNET]
 
 def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
@@ -37,7 +38,7 @@ def unittestexperiment(experiment):
 def run():
 
     # load dataset
-    dataset = traindata.load_and_construct_dataset()
+    # dataset = traindata.load_and_construct_dataset()
 
     # load test_sample array
     test_samples = traindata.load_test_samples()
@@ -51,8 +52,11 @@ def run():
             experiment = exp()
             general_logger.info("Starting experiment {}...".format(experiment.EXPERIMENT_NAME))
 
-            # Start each experiment:
-            experiment.run(dataset, test_samples, 100, 1)
+            # Start each experiment
+            # experiment.run(dataset, 100, 5)
+
+            # Generate statistic
+            experiment.gen_statistic(test_samples, 100)
 
         except Exception as e:
             # send to log that something went wrong
