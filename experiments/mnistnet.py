@@ -30,7 +30,7 @@ class MNISTNET(Experiment):
         return model_from_json(json)
 
     def _model_name_from_parameters(self, batch_size, epochs, **kwargs):
-        name_format = "{}-b{}-e"
+        name_format = "{}-b{}-e{}-model"
         name = MNISTNET.EXPERIMENT_NAME.replace(' ', '_').lower()
         return name_format.format(name, batch_size, epochs)
 

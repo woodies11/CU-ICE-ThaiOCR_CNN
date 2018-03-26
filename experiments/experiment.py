@@ -1,6 +1,7 @@
 import logging
 from keras.models import model_from_json
 import matplotlib.pyplot as plt
+import os
 
 def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
@@ -19,6 +20,10 @@ def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(m
     logger.addHandler(console_handler)
 
     return logger
+
+def makedirifnotexist(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 #################################################################################################
 # Experiment Class start here:
@@ -44,6 +49,10 @@ class Experiment(object):
         # dafault directory to save models
         self.MODEL_DIRECTORY = "./experiments/models/{}/".format(self.INSTANCE_NAME)
         self.RESULT_STATISTIC_DIRECTORY = "./experiments/results/{}/".format(self.INSTANCE_NAME)
+
+        makedirifnotexist(self.MODEL_DIRECTORY)
+        makedirifnotexist(self.RESULT_STATISTIC_DIRECTORY)
+        makedirifnotexist("./experiments/logs/")
 
         self.result_logger = setup_logger(self.INSTANCE_NAME, "./experiments/logs/results.txt")
         self.general_logger = setup_logger(self.INSTANCE_NAME, "./experiments/logs/experiments.txt")
