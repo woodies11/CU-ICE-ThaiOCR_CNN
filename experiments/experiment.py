@@ -38,12 +38,21 @@ class Experiment(object):
 
     ################################################
 
+    def __init__(self, nameprefix=""):
+        self.INSTANCE_NAME = nameprefix + self.EXPERIMENT_NAME
+
+        # dafault directory to save models
+        self.MODEL_DIRECTORY = "./experiments/models/{}/".format(self.INSTANCE_NAME)
+        self.RESULT_STATISTIC_DIRECTORY = "./experiments/results/{}/".format(self.INSTANCE_NAME)
+
+        self.result_logger = setup_logger(self.INSTANCE_NAME, "./experiments/logs/results.txt")
+        self.general_logger = setup_logger(self.INSTANCE_NAME, "./experiments/logs/experiments.txt")
+
     # ========================================================================================================
     # These MUST BE OVERRIDDEN and IMPLEMENTED
     # ========================================================================================================
 
-    @staticmethod
-    def _model_from_json(json, **kwargs):
+    def _model_from_json(self, json, **kwargs):
         """
         Call keras.models.model_from_json(json, custom_objects)
         with appropiate custom_objects.
@@ -56,8 +65,7 @@ class Experiment(object):
         """
         raise NotImplementedError
 
-    @staticmethod
-    def _model_name_from_parameters(batch_size, epochs, **kwargs):
+    def _model_name_from_parameters(self, batch_size, epochs, **kwargs):
         """
         Use to create a name for saving model.
         Note that this name should be able to uniquely
@@ -68,8 +76,7 @@ class Experiment(object):
         """
         raise NotImplementedError
 
-    @staticmethod
-    def __try_load_for_continuation(batch_size, epochs, **kwargs):
+    def __try_load_for_continuation(self, batch_size, epochs, **kwargs):
         """
         This method try to load the most recent model, if exist,
         that can be continued from for this parameters.
@@ -95,15 +102,13 @@ class Experiment(object):
         """
         return (None, batch_size, epochs, kwargs)
 
-    @staticmethod
-    def predict(model, test_sample, **kwargs):
+    def predict(self, model, test_sample, **kwargs):
         """
         Should return the prediction in whatever format evaluate() will use.
         """
         raise NotImplementedError
 
-    @staticmethod
-    def evaluate(model, test_samples, **kwargs):
+    def evaluate(self, model, test_samples, **kwargs):
         """
 
         test_samples should be in format:
@@ -125,34 +130,24 @@ class Experiment(object):
         raise NotImplementedError
 
     # These are chained call by the internal methods.
-    # You should override these to implement your own
+    # You SHOULD OVERRIDE these to implement your own
     # function but SHOULD NOT CALL THEM YOURSELF.
     # Let the internal methods call them.
 
-    @staticmethod
-    def _createmodel(X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
+    def _createmodel(self, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
         raise NotImplementedError
 
-    @staticmethod
-    def _fitmodel(model, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
+    def _fitmodel(self, model, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):
         raise NotImplementedError
 
 
     #########################################################################################################
-    
-    # dafault directory to save models
-    MODEL_DIRECTORY = "./experiments/models/{}/".format(EXPERIMENT_NAME)
-    RESULT_STATISTIC_DIRECTORY = "./experiments/results/{}/".format(EXPERIMENT_NAME)
-
-    result_logger = setup_logger(EXPERIMENT_NAME, "./experiments/logs/results.txt")
-    general_logger = setup_logger(EXPERIMENT_NAME, "./experiments/logs/experiments.txt")
 
     # ========================================================================================================
     # These are handy default implementation. You can override these if needed.
     # ========================================================================================================
     
-    @staticmethod
-    def savemodel(model, name, directory=MODEL_DIRECTORY, **kwargs):
+    def savemodel(self, model, name, directory=None, **kwargs):
         """
         Save model as <name>.json and <name>.h5 to directory.
 
@@ -163,6 +158,9 @@ class Experiment(object):
         Generally, model are save in exactly the same manner
         so there shouldn't be a need to override this.
         """
+
+        if directory is None:
+            directory = self.MODEL_DIRECTORY
 
         # make sure directory path ended with the last / 
         if not directory.endswith('/'):
@@ -177,13 +175,15 @@ class Experiment(object):
         model.save_weights(directory + name+'.h5')
 
         # log
-        Experiment.general_logger.info("MODEL: {} SAVED TO {}.".format(name, directory))
+        self.general_logger.info("MODEL: {} SAVED TO {}.".format(name, directory))
     
-    @staticmethod
-    def loadmodel_from_name(name, directory=MODEL_DIRECTORY, **kwargs):
+    def loadmodel_from_name(self, name, directory=None, **kwargs):
         """
         Utility method to call loadmodel() using only name and directory.
         """
+
+        if directory is None:
+            directory = self.MODEL_DIRECTORY
 
         # make sure directory path ended with the last / 
         if not directory.endswith('/'):
@@ -193,10 +193,9 @@ class Experiment(object):
         json_file = base_model_dir+'.json'
         weights_file = base_model_dir+'.h5'
 
-        return Experiment.loadmodel(json_file, weights_file, *kwargs)
+        return self.loadmodel(json_file, weights_file, *kwargs)
 
-    @staticmethod
-    def loadmodel(json_file, weights_file, **kwargs):
+    def loadmodel(self, json_file, weights_file, **kwargs):
         """
         Load model from json and h5 file.
         This method DOES NOT construct and compile model by itself.
@@ -218,7 +217,7 @@ class Experiment(object):
 
         # use experiment specific method to construct
         # the model from JSON
-        model = Experiment._model_from_json(loaded_model_json, **kwargs)
+        model = self._model_from_json(loaded_model_json, **kwargs)
 
         # load weights into new model
         model.load_weights(weights_file)
@@ -226,8 +225,11 @@ class Experiment(object):
         # return the ready-to-use model
         return model
 
-    @staticmethod
-    def _generate_bar_char_img(classes_acc, name, directory=RESULT_STATISTIC_DIRECTORY, title=None):
+    def _generate_bar_char_img(self, classes_acc, name, directory=None, title=None):
+
+        if directory is None:
+            directory = self.RESULT_STATISTIC_DIRECTORY
+
         # make sure directory path ended with the last / 
         if not directory.endswith('/'):
             directory = directory + '/'
@@ -255,7 +257,7 @@ class Experiment(object):
 
         # save figure to the save_path
         plt.savefig(save_path)
-        Experiment.general_logger.info("BAR CHART for {} saved to {}.".format(name, save_path))
+        self.general_logger.info("BAR CHART for {} saved to {}.".format(name, save_path))
 
     # ========================================================================================================
     # These SHOULD NOT BE OVERRIDDEN
@@ -265,26 +267,23 @@ class Experiment(object):
     # logging, etc.
     # YOU SHOULD NOT OVERRIDE THESE!
     
-    @staticmethod
-    def __internal_createmodel(dataset, batch_size, epochs, **kwargs):
+    def __internal_createmodel(self, dataset, batch_size, epochs, **kwargs):
         """
         note that dataset are in from of (X_train, y_train, X_test, y_test)
         we expand it into X_train, y_train, X_test, y_test for our function
         for easier use
         """
-        return Experiment._createmodel(*dataset, **kwargs)
+        return self._createmodel(*dataset, batch_size, epochs, **kwargs)
 
-    @staticmethod
-    def __internal_fitmodel(model, dataset, batch_size, epochs, **kwargs):
+    def __internal_fitmodel(self, model, dataset, batch_size, epochs, **kwargs):
         """
         note that dataset are in from of (X_train, y_train, X_test, y_test)
         we expand it into X_train, y_train, X_test, y_test for our function
         for easier use
         """
-        return Experiment._fitmodel(model, *dataset, batch_size, epochs, **kwargs)
+        return self._fitmodel(model, *dataset, batch_size, epochs, **kwargs)
 
-    @staticmethod
-    def run(dataset, test_samples, batch_size, epochs, allow_continuation=True, **kwargs):
+    def run(self, dataset, test_samples, batch_size, epochs, allow_continuation=True, **kwargs):
         """
         Run the experiment using the given parameters.
 
@@ -294,33 +293,35 @@ class Experiment(object):
         dataset must be in the form of (X_train, y_train, X_test, y_test)
         """
 
-        model_name = _model_name_from_parameters(**kwargs)
+        model_name = self._model_name_from_parameters(batch_size, epochs, **kwargs)
 
         model = None
 
         if allow_continuation:
             #try to load the any existing model that can be continue from
-            (model, new_kwargs) = Experiment.__try_load_for_continuation(**kwargs)
+            (model, new_batch_size, new_epochs, new_kwargs) = self.__try_load_for_continuation(batch_size, epochs, **kwargs)
 
         if model is not None:
             # If able to load model, set kwargs to the new_kwargs for continuation.
             # Refer to comments in the __try_load_for_continuation() for explanation.
             kwargs = new_kwargs
+            batch_size = new_batch_size
+            epochs = new_epochs
         else:
             # create the model from scratch
-            model = Experiment.__internal_createmodel(dataset, **kwargs)
+            model = self.__internal_createmodel(dataset, batch_size, epochs, **kwargs)
 
         # (continue) fitting model
-        Experiment.__internal_fitmodel(dataset, model, **kwargs)
+        self.__internal_fitmodel(model, dataset, batch_size, epochs, **kwargs)
         
         # save this model
-        Experiment.savemodel(model, model_name, **kwargs)
+        self.savemodel(model, model_name, **kwargs)
 
         # evaluate model
-        classes_acc = Experiment.evaluate(model, test_samples, *kwargs)
-        result_logger.info("CLASSES ACC for model {}: {}".format(model_name, classes_acc))
+        classes_acc = self.evaluate(model, test_samples, *kwargs)
+        self.result_logger.info("CLASSES ACC for model {}: {}".format(model_name, classes_acc))
 
         # generate and save plot
-        Experiment._generate_bar_char_img(classes_acc, model_name)
+        self._generate_bar_char_img(classes_acc, model_name)
 
 
