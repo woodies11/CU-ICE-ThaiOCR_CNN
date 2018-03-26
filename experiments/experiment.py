@@ -20,13 +20,120 @@ def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(m
 
     return logger
 
+#################################################################################################
+# Experiment Class start here:
+#################################################################################################
+
 class Experiment(object):
+
+    ################################################
+    # General description.
+    # Override and set these for yourself.
+    # Will be used for output files naming.
 
     EXPERIMENT_NAME = "GENERIC EXPERIMENT"
     EXPERIMENT_DESCRIPTION = """
     A base class template for an experiment.
     """
 
+    ################################################
+
+    # ========================================================================================================
+    # These MUST BE OVERRIDDEN and IMPLEMENTED
+    # ========================================================================================================
+
+    @staticmethod
+    def _model_from_json(json, **kwargs):
+        """
+        Call keras.models.model_from_json(json, custom_objects)
+        with appropiate custom_objects.
+
+        IMPORTANT:
+        ----------
+        The json object will be supplied by run(),
+        please only load AND compile the model then return,
+        no need to load weight.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def _model_name_from_parameters(**kwargs):
+        """
+        Use to create a name for saving model.
+        Note that this name should be able to uniquely
+        identify each set of parameters used to generate
+        the model. 
+        
+        E.g. ResNet18_b100_e10 for ResNet18 batch_size: 100, epochs: 10
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def __try_load_for_continuation(**kwargs):
+        """
+        This method try to load the most recent model, if exist,
+        that can be continued from for this parameters.
+
+        For example, if kwargs = [batch_size: 100, epochs: 10]
+        and we already have a saved model from [batch_size: 100, epochs: 7]
+        then that model will be loaded and return along with new parameters
+        [batch_size: 100, epochs: 3], where epochs = 3 because 10 - 7 = 3.
+        That is, we need 3 more epochs to reach overall epochs of 10.
+
+        Since each network may need different parameter, the default implemnetation
+        return None so the model will always be created from scratch.
+
+        -----
+        The method must return
+
+        (model, **new_kwargs)
+
+        model - the loaded model,
+        **new_kwargs - kwargs needed for continuation
+
+        """
+        return (None, **kwargs)
+
+    @staticmethod
+    def predict(model, test_sample, **kwargs):
+        """
+        Should return the most probable class of the given sample.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def evaluate(model, test_samples, **kwargs):
+        """
+        Should return classes_acc in the format:
+        [
+            'ก': 0.90,
+            'ข': 0.75,
+            .
+            .
+            .
+        ]
+
+        where the key is the class and the value is the accuracy from 100%
+        """
+        raise NotImplementedError
+
+    # ====================================================
+    # These are chained call by the internal methods.
+    # You should override these to implement your own
+    # function but SHOULD NOT CALL THEM YOURSELF.
+    # Let the internal methods call them.
+
+    @staticmethod
+    def _createmodel(X_train, y_train, X_test, y_test, **kwargs):
+        raise NotImplementedError
+
+    @staticmethod
+    def _fitmodel(X_train, y_train, X_test, y_test, model, **kwargs):
+        raise NotImplementedError
+
+
+    #########################################################################################################
+    
     # dafault directory to save models
     MODEL_DIRECTORY = "./experiments/models/{}/".format(EXPERIMENT_NAME)
     RESULT_STATISTIC_DIRECTORY = "./experiments/results/{}/".format(EXPERIMENT_NAME)
@@ -34,53 +141,9 @@ class Experiment(object):
     result_logger = setup_logger(EXPERIMENT_NAME, "./experiments/logs/results.txt")
     general_logger = setup_logger(EXPERIMENT_NAME, "./experiments/logs/experiments.txt")
 
-    @staticmethod
-    def run(dataset, test_samples, allow_continuation=True, **kwargs):
-        """
-        Run the experiment using the given parameters.
-
-        The parameters (kwargs) for this iteration will be given by the
-        testbench in the form of a keyword-dictionary.
-
-        dataset must be in the form of (X_train, y_train, X_test, y_test)
-        """
-
-        model_name = _model_name_from_parameters(**kwargs)
-
-        model = None
-
-        if allow_continuation:
-            #try to load the any existing model that can be continue from
-            (model, new_kwargs) = Experiment.__try_load_for_continuation(**kwargs)
-
-        if model is not None:
-            # If able to load model, set kwargs to the new_kwargs for continuation.
-            # Refer to comments in the __try_load_for_continuation() for explanation.
-            kwargs = new_kwargs
-        else:
-            # create the model from scratch
-            model = Experiment.__internal_createmodel(dataset, **kwargs)
-
-        # (continue) fitting model
-        Experiment.__internal_fitmodel(dataset, model, **kwargs)
-        
-        # save this model
-        Experiment.savemodel(model, model_name, kwargs=**kwargs)
-
-        # evaluate model
-        classes_acc = Experiment.evaluate(model, test_samples, *kwargs)
-        result_logger.info("CLASSES ACC for model {}: {}".format(model_name, classes_acc))
-
-        # generate and save plot
-        Experiment._generate_bar_char_img(classes_acc, model_name)
-
-    # ====================================================
-        
-    @staticmethod
-    def _model_from_json(json, **kwargs):
-        raise NotImplementedError
-
-    # ====================================================
+    # ========================================================================================================
+    # These are handy default implementation. You can override these if needed.
+    # ========================================================================================================
     
     @staticmethod
     def savemodel(model, name, directory=Experiment.MODEL_DIRECTORY, **kwargs):
@@ -156,101 +219,7 @@ class Experiment(object):
 
         # return the ready-to-use model
         return model
-    
-    @staticmethod
-    def predict(model, **kwargs):
-        raise NotImplementedError
 
-    @staticmethod
-    def evaluate(model, test_samples, **kwargs):
-        """
-        Should return classes_acc in the format:
-        [
-            'ก': 0.90,
-            'ข': 0.75,
-            .
-            .
-            .
-        ]
-
-        where the key is the class and the value is the accuracy from 100%
-        """
-        raise NotImplementedError
-
-    # ====================================================
-    # These are internal method called by run().
-    # They are for implementing preprocess such as
-    # logging, etc.
-    # YOU SHOULD NOT OVERRIDE THESE!
-    
-    @staticmethod
-    def __internal_createmodel(dataset, **kwargs):
-        # note that dataset are in from of (X_train, y_train, X_test, y_test)
-        # we expand it into X_train, y_train, X_test, y_test for our function
-        # for easier use
-        return Experiment._createmodel(*dataset, **kwargs)
-
-    @staticmethod
-    def __internal_fitmodel(dataset, model, **kwargs):
-        # note that dataset are in from of (X_train, y_train, X_test, y_test)
-        # we expand it into X_train, y_train, X_test, y_test for our function
-        # for easier use
-        return Experiment._fitmodel(*dataset, model, **kwargs)
-
-    # -----------------------------------
-
-    @staticmethod
-    def __try_load_for_continuation(**kwargs):
-        """
-        This method try to load the most recent model, if exist,
-        that can be continued from for this parameters.
-
-        For example, if kwargs = [batch_size: 100, epochs: 10]
-        and we already have a saved model from [batch_size: 100, epochs: 7]
-        then that model will be loaded and return along with new parameters
-        [batch_size: 100, epochs: 3], where epochs = 3 because 10 - 7 = 3.
-        That is, we need 3 more epochs to reach overall epochs of 10.
-
-        Since each network may need different parameter, the default implemnetation
-        return None so the model will always be created from scratch.
-
-        -----
-        The method must return
-
-        (model, **new_kwargs)
-
-        model - the loaded model,
-        **new_kwargs - kwargs needed for continuation
-
-        """
-        return (None, **kwargs)
-
-    # ====================================================
-    # These are chained call by the internal methods.
-    # You should override these to implement your own
-    # function but SHOULD NOT CALL THEM YOURSELF.
-    # Let the internal methods call them.
-
-    @staticmethod
-    def _createmodel(X_train, y_train, X_test, y_test, **kwargs):
-        raise NotImplementedError
-
-    @staticmethod
-    def _fitmodel(X_train, y_train, X_test, y_test, model, **kwargs):
-        raise NotImplementedError
-
-    @staticmethod
-    def _model_name_from_parameters(**kwargs):
-        """
-        Use to create a name for saving model.
-        Note that this name should be able to uniquely
-        identify each set of parameters used to generate
-        the model. 
-        
-        E.g. ResNet18_b100_e10 for ResNet18 batch_size: 100, epochs: 10
-        """
-        raise NotImplementedError
-    
     @staticmethod
     def _generate_bar_char_img(classes_acc, name, directory=Experiment.RESULT_STATISTIC_DIRECTORY, title=name):
         # make sure directory path ended with the last / 
@@ -278,5 +247,71 @@ class Experiment(object):
         # save figure to the save_path
         plt.savefig(save_path)
         Experiment.general_logger.info("BAR CHART for {} saved to {}.".format(name, save_path))
+
+    # ========================================================================================================
+    # These SHOULD NOT BE OVERRIDDEN
+    # ========================================================================================================
+    # These are internal method called by run().
+    # They are for implementing preprocess such as
+    # logging, etc.
+    # YOU SHOULD NOT OVERRIDE THESE!
+    
+    @staticmethod
+    def __internal_createmodel(dataset, **kwargs):
+        """
+        note that dataset are in from of (X_train, y_train, X_test, y_test)
+        we expand it into X_train, y_train, X_test, y_test for our function
+        for easier use
+        """
+        return Experiment._createmodel(*dataset, **kwargs)
+
+    @staticmethod
+    def __internal_fitmodel(dataset, model, **kwargs):
+        """
+        note that dataset are in from of (X_train, y_train, X_test, y_test)
+        we expand it into X_train, y_train, X_test, y_test for our function
+        for easier use
+        """
+        return Experiment._fitmodel(*dataset, model, **kwargs)
+
+    @staticmethod
+    def run(dataset, test_samples, allow_continuation=True, **kwargs):
+        """
+        Run the experiment using the given parameters.
+
+        The parameters (kwargs) for this iteration will be given by the
+        testbench in the form of a keyword-dictionary.
+
+        dataset must be in the form of (X_train, y_train, X_test, y_test)
+        """
+
+        model_name = _model_name_from_parameters(**kwargs)
+
+        model = None
+
+        if allow_continuation:
+            #try to load the any existing model that can be continue from
+            (model, new_kwargs) = Experiment.__try_load_for_continuation(**kwargs)
+
+        if model is not None:
+            # If able to load model, set kwargs to the new_kwargs for continuation.
+            # Refer to comments in the __try_load_for_continuation() for explanation.
+            kwargs = new_kwargs
+        else:
+            # create the model from scratch
+            model = Experiment.__internal_createmodel(dataset, **kwargs)
+
+        # (continue) fitting model
+        Experiment.__internal_fitmodel(dataset, model, **kwargs)
+        
+        # save this model
+        Experiment.savemodel(model, model_name, kwargs=**kwargs)
+
+        # evaluate model
+        classes_acc = Experiment.evaluate(model, test_samples, *kwargs)
+        result_logger.info("CLASSES ACC for model {}: {}".format(model_name, classes_acc))
+
+        # generate and save plot
+        Experiment._generate_bar_char_img(classes_acc, model_name)
 
 
