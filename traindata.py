@@ -29,9 +29,9 @@ def load_image_data(max_set=None):
 		print('\t{} data loaded '.format(X_set.shape[0]))
 		return X_set, y_set
 	except OSError:
-		print("\tNo h5 file found. Recreating Nuppy Array...")
+		print("\tNo h5 file found. Recreating Numpy Array...")
 	except KeyError:
-		print("\tCorrupted h5 file. Recreating Nuppy Array...")
+		print("\tCorrupted h5 file. Recreating Numpy Array...")
 		
 	# load images as grayscale
 	X_set = np.array(

@@ -1,5 +1,6 @@
-from experiment import Experiment
+from .experiment import Experiment
 from keras.models import model_from_json
+import glob
 
 def listdir_nohidden(path):
 	directories = glob.glob(path+'/**/*', recursive=True)
@@ -11,6 +12,9 @@ class MNISTNET(Experiment):
     EXPERIMENT_DESCRIPTION = """
     Models trained using a simple network originally intended for MNIST.
     """
+
+    classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
+    classes_dict = {chr(i):[0,0] for i in range(ord('ก'), ord('ฮ')+1)}
 
     @staticmethod
     def _model_from_json(json, **kwargs):
@@ -25,19 +29,19 @@ class MNISTNET(Experiment):
     @staticmethod
     def __try_load_for_continuation(batch_size, epochs, **kwargs):
         # TODO: will implement
-        return (None, batch_size, epochs, **kwargs)
+        return (None, batch_size, epochs, kwargs)
 
     @staticmethod
     def predict(model, test_sample, **kwargs):
-        pred = model.predict_classes(img)
-        pred_class = classes[pred[0]]
+        pred = model.predict_classes(test_sample)
+        pred_class = MNISTNET.classes[pred[0]]
         return pred_class
 
-    def evaluate(model, test_samples, **kwargs):
+    def evaluate(model, test_samples, kwargs):
 
         # { character : [count, right] }
-        classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
-        classes_dict = {chr(i):[0,0] for i in range(ord('ก'), ord('ฮ')+1)}
+        classes = MNISTNET.classes
+        classes_dict = MNISTNET.classes_dict
 
         test_data_count = 0
 
@@ -66,4 +70,4 @@ class MNISTNET(Experiment):
             test_data_count = -1
 
         MNISTNET.general_logger.info('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
-        return classes_acc = {k:(classes_dict[k][1]/classes_dict[k][0] if classes_dict[k][0] > 0 else 0) for k in classes_dict}
+        return {k:(classes_dict[k][1]/classes_dict[k][0] if classes_dict[k][0] > 0 else 0) for k in classes_dict}

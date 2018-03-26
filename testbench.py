@@ -1,7 +1,9 @@
-import logging
-from experiments import mnistnet
+import logging, os
+from experiments.mnistnet import MNISTNET
+import traindata
+import imageutil
 
-experiments = [mnistnet]
+experiments = [MNISTNET]
 
 def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
@@ -30,28 +32,45 @@ def unittestexperiment(experiment):
 
 
 def run():
-    for experiment in experiments:
+
+    # load common data for speed
+
+    # load dataset
+    dataset = traindata.load_image_data()
+
+    # construct test_sample array
+    classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
+    test_samples = {c:[] for c in classes}
+
+    SAMPLE_PATH = 'th_samples'
+    paths = os.listdir(SAMPLE_PATH)
+    
+    for character in paths:
+        # ignore system files
+        if(character.startswith('.')):
+            continue	
+
+        img_paths = os.listdir(SAMPLE_PATH+"/"+character)
+
+        for img_name in img_paths:
+            # ignore system files
+            if(img_name.startswith('.')):
+                continue	
+
+            img = imageutil.readimageinput(SAMPLE_PATH+"/"+character+'/'+img_name, preview=preview, invert=False, size=(128,128))
+            test_samples[character].append(img)
+
+
+    for exp in experiments:
         # Wrap everthing in try catch so our test
         # will always continue.
         # Check the log file for any errors.
         try:
+            experiment = exp()
             general_logger.info("Starting experiment {}...".format(experiment.__name__))
 
-            
-            try:
-                # get experiment interation information
-                iterations = experiment.iterations
-            except AttributeError:
-                # If no iterations is specified,
-                # create one iteration with empty parameters.
-                iterations = [[]] 
-
-            # Variable iterations is in this scope after try/except.
-
-            general_logger.info("Experiment iteration info: {}".format(iterations))
-
             # Start each experiment:
-            
+            experiment.run(dataset, test_samples, 100, 1)
 
         except Exception as e:
             # send to log that something went wrong

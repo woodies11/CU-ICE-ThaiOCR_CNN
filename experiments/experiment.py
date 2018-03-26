@@ -86,14 +86,14 @@ class Experiment(object):
         -----
         The method must return
 
-        (model, batch_size, epochs, **new_kwargs)
+        (model, batch_size, epochs, new_kwargs)
 
         model - the loaded model,
         batch_size, epochs - new batch_size and epochs
-        **new_kwargs - kwargs needed for continuation
+        new_kwargs - kwargs needed for continuation
 
         """
-        return (None, batch_size, epochs, **kwargs)
+        return (None, batch_size, epochs, kwargs)
 
     @staticmethod
     def predict(model, test_sample, **kwargs):
@@ -152,7 +152,7 @@ class Experiment(object):
     # ========================================================================================================
     
     @staticmethod
-    def savemodel(model, name, directory=Experiment.MODEL_DIRECTORY, **kwargs):
+    def savemodel(model, name, directory=MODEL_DIRECTORY, **kwargs):
         """
         Save model as <name>.json and <name>.h5 to directory.
 
@@ -180,7 +180,7 @@ class Experiment(object):
         Experiment.general_logger.info("MODEL: {} SAVED TO {}.".format(name, directory))
     
     @staticmethod
-    def loadmodel_from_name(name, directory=Experiment.MODEL_DIRECTORY, **kwargs):
+    def loadmodel_from_name(name, directory=MODEL_DIRECTORY, **kwargs):
         """
         Utility method to call loadmodel() using only name and directory.
         """
@@ -227,10 +227,13 @@ class Experiment(object):
         return model
 
     @staticmethod
-    def _generate_bar_char_img(classes_acc, name, directory=Experiment.RESULT_STATISTIC_DIRECTORY, title=name):
+    def _generate_bar_char_img(classes_acc, name, directory=RESULT_STATISTIC_DIRECTORY, title=None):
         # make sure directory path ended with the last / 
         if not directory.endswith('/'):
             directory = directory + '/'
+
+        if title is None:
+            title = name
         
         save_path = directory + name
 
@@ -311,7 +314,7 @@ class Experiment(object):
         Experiment.__internal_fitmodel(dataset, model, **kwargs)
         
         # save this model
-        Experiment.savemodel(model, model_name, kwargs=**kwargs)
+        Experiment.savemodel(model, model_name, **kwargs)
 
         # evaluate model
         classes_acc = Experiment.evaluate(model, test_samples, *kwargs)
