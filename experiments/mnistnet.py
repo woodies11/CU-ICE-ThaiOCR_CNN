@@ -43,7 +43,7 @@ class MNISTNET(Experiment):
         pred_class = MNISTNET.classes[pred[0]]
         return pred_class
 
-    def evaluate(self, model, test_samples, kwargs):
+    def evaluate(self, model, test_samples, **kwargs):
 
         # { character : [count, right] }
         classes = MNISTNET.classes
@@ -76,7 +76,7 @@ class MNISTNET(Experiment):
         if test_data_count == 0:
             test_data_count = -1
 
-        MNISTNET.general_logger.info('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
+        self.general_logger.info('{}/{} correct ({})'.format(correct_count, test_data_count, correct_count/test_data_count))
         return {k:(classes_dict[k][1]/classes_dict[k][0] if classes_dict[k][0] > 0 else 0) for k in classes_dict}
 
     def _createmodel(self, X_train, y_train, X_test, y_test, batch_size, epochs, **kwargs):

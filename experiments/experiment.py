@@ -1,7 +1,7 @@
-import logging
+import logging, os
 from keras.models import model_from_json
 import matplotlib.pyplot as plt
-import os
+import numpy as np
 
 def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""

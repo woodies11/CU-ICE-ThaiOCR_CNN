@@ -128,3 +128,5 @@ saved_model/
 # logs
 logs
 */logs
+experiments/models/
+experiments/results/
