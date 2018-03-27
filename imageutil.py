@@ -22,6 +22,9 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 	if invert:
 		img = 1 - img/255
 
+	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (1, 5))
+	img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+
 	# if preview, the program will be block until the
 	# plot window is closed
 	if preview:
@@ -37,5 +40,5 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 	return img
 	
 if __name__ == '__main__':
-	readimageinput('th_samples/ก/im2_1.jpg', True, False, (128,128))
+	readimageinput('th_samples/ข/im13_8.jpg', True, False, (128,128))
 	plt.show()
