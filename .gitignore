@@ -131,3 +131,6 @@ logs
 experiments/models/
 experiments/results/
 testbench_config.py
+
+char_seg_test/data/
+char_seg_test/segmented_img/
