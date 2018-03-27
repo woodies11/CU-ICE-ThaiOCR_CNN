@@ -22,7 +22,7 @@ def setup_logger(name, log_file, level=logging.INFO, format='%(levelname)-7s|%(m
 
     return logger
 
-def run(experiments, should_train_model=True, should_generate_statistic=True, forcecreate=False, debug_mode=False):
+def run(experiments, should_train_model=True, should_generate_statistic=True, nameprefix="", forcecreate=False, debug_mode=False):
 
     general_logger = setup_logger("general", "logs/general.txt", logging.DEBUG)
     result_logger = setup_logger("result", "logs/result.txt", logging.INFO)
@@ -34,7 +34,7 @@ def run(experiments, should_train_model=True, should_generate_statistic=True, fo
             exp_name += "-debug"
 
         # create a new Experiment object
-        experiment = exp_class(namesuffix=exp_name)
+        experiment = exp_class(nameprefix=nameprefix, namesuffix=exp_name)
         general_logger.info("Starting experiment {} | batch_size: {} epochs: {}".format(experiment.EXPERIMENT_NAME, batch_size, epochs))
 
         # Start the experiment
@@ -47,7 +47,7 @@ def run(experiments, should_train_model=True, should_generate_statistic=True, fo
             exp_name += "-debug"
 
         # create a new Experiment object
-        experiment = exp_class(namesuffix=exp_name)
+        experiment = exp_class(nameprefix=nameprefix, namesuffix=exp_name)
         general_logger.info("Start generating statistic for experiment {} | batch_size: {} epochs: {}".format(experiment.EXPERIMENT_NAME, batch_size, epochs))
 
         # Generate statistic
@@ -148,10 +148,18 @@ if __name__ == "__main__":
         help='Enable debug mode, a very small training set will be loaded instead of the full version.'
     )
 
+    parser.add_argument(
+        '-n', 
+        '--nameprefix',
+        default='', 
+        help='Optional prefix for experiment name.'
+    )
+
     args = parser.parse_args()
 
     debug_mode = args.debug_mode
     forcecreate = args.force_recreate
+    nameprefix = args.nameprefix
 
     _train = args.train
     _stat = args.statistic
@@ -179,4 +187,4 @@ if __name__ == "__main__":
     import testbench_config
     experiments = testbench_config.experiments
 
-    run(experiments, should_train_model, should_generate_statistic, forcecreate, debug_mode)
+    run(experiments, should_train_model, should_generate_statistic, nameprefix, forcecreate, debug_mode)
