@@ -16,6 +16,12 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 	# read image as black and white
 	img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 
+	# fall back option for Windows since
+	# cv2 doesn't work with Unicode path
+	if img is None:
+		img = Image.open(img_path).convert('L')
+		img = np.array(img)
+
 	# binarisation
 	ret, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
