@@ -131,3 +131,5 @@ logs
 experiments/models/
 experiments/results/
 testbench_config.py
+segmented_img/
+th_samples.zip

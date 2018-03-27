@@ -8,11 +8,11 @@ from keras import backend as K
 K.set_image_dim_ordering('th')
 from keras.models import model_from_json
 
-class RESNET(Experiment):
+class RESNET18(Experiment):
 
-    EXPERIMENT_NAME = "RESNET"
+    EXPERIMENT_NAME = "RESNET18"
     EXPERIMENT_DESCRIPTION = """
-    Model trained based on the ResNet library.
+    Model trained based on the ResNet18 library.
     """
 
     def _model_from_json(self, json, **kwargs):
