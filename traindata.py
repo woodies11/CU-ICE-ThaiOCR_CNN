@@ -17,22 +17,6 @@ def load_test_samples(forcecreate=False):
 
     filename = TEST_SAMPLES_FILE_NAME
 
-    # if not forcecreate:
-    #     try:
-    #         h5f = h5py.File(filename+'.h5','r')
-    #         test_samples = h5f['test_samples'][:]
-    #         h5f.close()
-    #         print("\tTest samples loaded from h5 file.")
-
-    #         return test_samples
-    #     except OSError:
-    #         print("\tNo h5 file found. Recreating Numpy Array...")
-    #     except KeyError:
-    #         print("\tCorrupted h5 file. Recreating Numpy Array...")
-    # else:
-    #     print("\tforcecreate is set to True. Recreating Numpy Array...")
-
-
     # construct test_sample array
     classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
     test_samples = {c:[] for c in classes}
@@ -52,7 +36,7 @@ def load_test_samples(forcecreate=False):
             if(img_name.startswith('.')):
                 continue    
 
-            img = imageutil.readimageinput(TEST_SAMPLES_PATH+"/"+character+'/'+img_name, preview=False, invert=False, size=(128,128))
+            img = imageutil.readimageinput(TEST_SAMPLES_PATH+"/"+character+'/'+img_name, preview=False, invert=False, size=(70,70))
             test_samples[character].append(img)
 
     return test_samples
@@ -130,7 +114,7 @@ def load_image_data(max_set=None, filename=DATA_FILE_NAME, forcecreate=False):
     X_set = np.array(
         [
             # preprocess can be done here
-            np.array(Image.open(image).convert('L')) 
+            np.array(imageutil.readimageinput(image, size=(70,70), as_Image=True)) 
                 for set_path in set_paths
                     for image in listdir_nohidden(set_path) 
         ]

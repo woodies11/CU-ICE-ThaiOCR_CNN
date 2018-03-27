@@ -71,9 +71,6 @@ class Experiment(object):
         makedirifnotexist(self.RESULT_STATISTIC_DIRECTORY)
         makedirifnotexist("./experiments/logs/")
 
-        self.result_logger = setup_logger(self.INSTANCE_NAME+"-result", "./experiments/logs/results.txt")
-        self.general_logger = setup_logger(self.INSTANCE_NAME+"-general", "./experiments/logs/experiments.txt")
-
     # ========================================================================================================
     # These MUST BE OVERRIDDEN and IMPLEMENTED
     # ========================================================================================================
@@ -282,6 +279,9 @@ class Experiment(object):
         dataset must be in the form of (X_train, y_train, X_test, y_test)
         """
 
+        self.result_logger = setup_logger(self.INSTANCE_NAME+"-result-run", "./experiments/logs/results.txt")
+        self.general_logger = setup_logger(self.INSTANCE_NAME+"-general-run", "./experiments/logs/experiments.txt")
+
         model_name = self._model_name_from_parameters(batch_size, **kwargs)
 
         model = self.__internal_createmodel(dataset, batch_size, epochs, **kwargs)
@@ -295,6 +295,10 @@ class Experiment(object):
         
 
     def gen_statistic(self, test_samples, batch_size, **kwargs):
+
+        self.result_logger = setup_logger(self.INSTANCE_NAME+"-result-stat", "./experiments/logs/results.txt")
+        self.general_logger = setup_logger(self.INSTANCE_NAME+"-general-stat", "./experiments/logs/experiments.txt")
+
         self.generate_all_bar_chars(test_samples, batch_size, **kwargs)
 
     def generate_all_bar_chars(self, test_samples, batch_size, **kwargs):

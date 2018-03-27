@@ -11,7 +11,7 @@ def trim(im):
     if bbox:
         return im.crop(bbox)
 
-def readimageinput(img_path, preview=False, invert=False, size=None):
+def readimageinput(img_path, preview=False, invert=False, size=None, as_Image=False):
 
 	# read image as black and white
 	img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
@@ -28,7 +28,12 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 
 	# Change into PILLOW image to do trim and padding
 	img = Image.fromarray(img)
-	img = trim(img)
+	_img = trim(img)
+
+	if _img is None:
+		print(img_path + "is empty...")
+	else:
+		img = _img
 
 	# get image size and find the longer dimension
 	# we will pad in the other dimension to make 
@@ -36,8 +41,8 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 	x,y = img.size
 	max_size = max(x,y)
 
-	# add padding
-	max_size = int(max_size*1.6)
+	# add padding border
+	# max_size = int(max_size*1)
 
 	# create a blank square image
 	sqcanvas = Image.new('L', (max_size, max_size), (255))
@@ -71,6 +76,9 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 	if preview:
 		plt.imshow(img, cmap=plt.get_cmap('gray'))
 
+	if as_Image:
+		return Image.fromarray(img)
+
 	img_width = img.shape[0]
 	img_height = img.shape[1]
 
@@ -81,5 +89,5 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 	return img
 	
 if __name__ == '__main__':
-	readimageinput('th_samples/ง/im17_51.jpg', True, False, (128,128))
+	readimageinput('th_samples/ค/3-164-A4-KHO KHWAI-43.png', True, False, (128,128))
 	plt.show()
