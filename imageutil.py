@@ -1,26 +1,64 @@
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageChops
 import matplotlib.pyplot as plt
 import cv2
 
+def trim(im):
+    bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
+    diff = ImageChops.difference(im, bg)
+    diff = ImageChops.add(diff, diff, 2.0, -100)
+    bbox = diff.getbbox()
+    if bbox:
+        return im.crop(bbox)
+
 def readimageinput(img_path, preview=False, invert=False, size=None):
-	# read image as black and white, Int mode (0-255)
-	img = Image.open(img_path).convert('L')
 
-	# resize image if size is specified
-	if size is not None:
-		img = img.resize(size=size)
-
-	# convert to numpy array
-	img = np.array(img)
+	# read image as black and white
+	img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 
 	# binarisation
 	ret, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+
+	# Change into PILLOW image to do trim and padding
+	img = Image.fromarray(img)
+	img = trim(img)
+
+	# get image size and find the longer dimension
+	# we will pad in the other dimension to make 
+	# a perfect square
+	x,y = img.size
+	max_size = max(x,y)
+
+	# add padding
+	max_size = int(max_size*1.6)
+
+	# create a blank square image
+	sqcanvas = Image.new('L', (max_size, max_size), (255))
+
+	# since paste() use top left corner as an anchor point,
+	# we want to calculate the position which will center
+	# our image
+	img_x = int((max_size - x)/2)
+	img_y = int((max_size - y)/2)
+	sqcanvas.paste(img, (img_x, img_y))
+	
+	img = sqcanvas
+
+
+	img = np.array(img)
 
 	# mnist dataset is white on black, this option invert the input
 	# if needed to match our trained set
 	if invert:
 		img = 1 - img/255
+
+	# resize image if size is specified
+	if size is not None:
+		img = cv2.resize(img, size)
+
+	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+	img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
 
 	# if preview, the program will be block until the
 	# plot window is closed
@@ -37,5 +75,5 @@ def readimageinput(img_path, preview=False, invert=False, size=None):
 	return img
 	
 if __name__ == '__main__':
-	readimageinput('th_samples/ก/im2_1.jpg', True, False, (128,128))
+	readimageinput('th_samples/ง/im17_51.jpg', True, False, (128,128))
 	plt.show()
