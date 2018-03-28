@@ -247,43 +247,83 @@ class Experiment(object):
         plt.close()
         self.general_logger.info("STATISTIC: Bar chart for {} saved to {}".format(name, save_path))
 
-    def _generate_confusion_matrix(self, all_class, all_label, all_pred):
+    def _generate_confusion_matrix(self, all_class, all_label, all_pred, name):
         cm = confusion_matrix(all_label, all_pred)
-        cm_plot_labels = all_label
-        self.plot_confusion_matrix(cm, cm_plot_labels, title='Confusion Matrix')
+        cm_plot_labels = all_class
+        self.plot_confusion_matrix(cm, cm_plot_labels, name, showVal=True)
 
-    def plot_confusion_matrix(self, cm, classes,
+    def plot_confusion_matrix(self, cm, classes, name,
+                          directory=None,
+                          title=None,
+                          showVal = False,
                           normalize=False,
-                          title='Confusion matrix',
                           cmap=plt.cm.Blues):
         """
         This function prints and plots the confusion matrix.
         Normalization can be applied by setting `normalize=True`.
         """
+        if directory is None:
+            directory = self.RESULT_STATISTIC_DIRECTORY
+
+        # make sure directory path ended with the last / 
+        if not directory.endswith('/'):
+            directory = directory + '/'
+
+        if title is None:
+            title = name
+
+        save_path = directory + name
+        # . will mess up savefig
+        # However, the very first one is a legit . for ./PATH so we need to keep it
+        # by ignoring the first, now -, character and add the . back on
+        save_path = "." + save_path.replace(".", "-")[1:] + "_cm"
+
+        plt.figure(dpi=200)
         plt.imshow(cm, interpolation='nearest', cmap=cmap)
         plt.title(title)
         plt.colorbar()
         tick_marks = np.arange(len(classes))
-        plt.xticks(tick_marks, classes, rotation=45)
-        plt.yticks(tick_marks, classes)
+        plt.xticks(tick_marks, classes, fontname='Tahoma', fontsize=7)
+        plt.yticks(tick_marks, classes, fontname='Tahoma', fontsize=7)
+        log_text = "Confusion matrix:"
+        if showVal:
+            if normalize:
+                cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+                log_text += " Normalized"
+            else:
+                log_text += " without normalization"
 
-        if normalize:
-            cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-            print("Normalized confusion matrix")
-        else:
-            print('Confusion matrix, without normalization')
-
-        print(cm)
+        # print(cm)
 
         thresh = cm.max() / 2.
-        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-            plt.text(j, i, cm[i, j],
-                     horizontalalignment="center",
-                     color="white" if cm[i, j] > thresh else "black")
+        if showVal:
+            # warning, showing value in such dense matrix will not look so nice
+            # try change font size, canvas size, dpi
+            for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+                val_text = cm[i, j]
+                if val_text==0 :
+                    val_text = ""
+                plt.text(j, i, 
+                         val_text,
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black",
+                         fontname='Tahoma',
+                         fontsize=3)
+        else:
+            for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+                plt.text(j, i, 
+                         "",
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
 
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.ylabel('True label')
         plt.xlabel('Predicted label')
+
+        # save figure to the save_path
+        plt.savefig(save_path)
+        plt.close()
+        self.general_logger.info(log_text + " for {} saved to {}".format(name, save_path))
 
     # ========================================================================================================
     # These SHOULD NOT BE OVERRIDDEN
@@ -364,7 +404,7 @@ class Experiment(object):
 
             # generate and save plot
             self._generate_bar_char_img(classes_acc, model_name, xlabel=xlabel)
-            self._generate_confusion_matrix(all_class, all_label, all_pred)
+            self._generate_confusion_matrix(all_class, all_label, all_pred, model_name)
 
     def __internal_predict(self, model, test_sample, **kwargs):
         classes = Experiment.CLASSES
@@ -382,9 +422,11 @@ class Experiment(object):
         all_pred = []
 
         for class_key in test_samples:
-            all_class.append(class_key)
             samples = test_samples[class_key]
-            test_data_count += len(samples)
+            sample_size = len(samples)
+            test_data_count += sample_size
+            if sample_size != 0:
+                all_class.append(class_key)
             for img in samples:
     
                 pred_class = self.__internal_predict(model, img)
