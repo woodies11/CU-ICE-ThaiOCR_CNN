@@ -247,7 +247,7 @@ class Experiment(object):
         plt.close()
         self.general_logger.info("STATISTIC: Bar chart for {} saved to {}".format(name, save_path))
 
-    def generate_confusion_matrix(self, all_class, all_label, all_pred):
+    def _generate_confusion_matrix(self, all_class, all_label, all_pred):
         cm = confusion_matrix(all_label, all_pred)
         cm_plot_labels = all_label
         self.plot_confusion_matrix(cm, cm_plot_labels, title='Confusion Matrix')
