@@ -5,6 +5,7 @@ import numpy as np
 import re
 from pathlib import Path
 from keras.callbacks import ModelCheckpoint
+import gc
 
 def setup_logger(name, log_file, level=logging.DEBUG, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
@@ -312,10 +313,18 @@ class Experiment(object):
         json_file = directory + self._model_name_from_parameters(batch_size, **kwargs)
 
         for model_weight in model_paths:
+            # clear up memory for next iteration
+            model = None
+            gc.collect()
+
+            # if the file is not of .h5 extension, skip
             if not model_weight.endswith('.h5'):
                 continue
+
+            # TODO: change to os getpath or something
             model_name = model_weight.split('/')[-1].split('\\')[-1][:-3]
 
+            # load the model
             model = self.loadmodel(json_file, model_weight, **kwargs)
 
             # evaluate model
