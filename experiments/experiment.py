@@ -250,14 +250,13 @@ class Experiment(object):
     def _generate_confusion_matrix(self, all_class, all_label, all_pred, name):
         cm = confusion_matrix(all_label, all_pred)
         cm_plot_labels = all_class
-        self.plot_confusion_matrix(cm, cm_plot_labels, name, showVal=True)
+        self.plot_confusion_matrix(cm, cm_plot_labels, name)
 
     def plot_confusion_matrix(self, cm, classes, name,
                           directory=None,
                           title=None,
                           showVal = False,
-                          normalize=False,
-                          cmap=plt.cm.Blues):
+                          normalize=False):
         """
         This function prints and plots the confusion matrix.
         Normalization can be applied by setting `normalize=True`.
@@ -277,8 +276,13 @@ class Experiment(object):
         # However, the very first one is a legit . for ./PATH so we need to keep it
         # by ignoring the first, now -, character and add the . back on
         save_path = "." + save_path.replace(".", "-")[1:] + "_cm"
-
-        plt.figure(dpi=200)
+        if showVal:
+            plt.figure(dpi=200)
+            cmap = plt.cm.Blues
+        else:
+            plt.figure(dpi=150)
+            cmap = plt.cm.Greys
+        
         plt.imshow(cm, interpolation='nearest', cmap=cmap)
         plt.title(title)
         plt.colorbar()
