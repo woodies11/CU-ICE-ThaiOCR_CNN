@@ -13,6 +13,8 @@ SMALL_DATA_FILE_NAME = "SMALL_DATA_ARRAY"
 TEST_SAMPLES_FILE_NAME = "TEST_SAMPLES_ARRAY"
 TEST_SAMPLES_PATH = 'th_samples'
 
+SAMPLE_SIZE = (28, 28)
+
 def load_test_samples(forcecreate=False):
 
     filename = TEST_SAMPLES_FILE_NAME
@@ -36,7 +38,7 @@ def load_test_samples(forcecreate=False):
             if(img_name.startswith('.')):
                 continue    
 
-            img = imageutil.readimageinput(TEST_SAMPLES_PATH+"/"+character+'/'+img_name, preview=False, invert=False, size=(70,70))
+            img = imageutil.readimageinput(TEST_SAMPLES_PATH+"/"+character+'/'+img_name, preview=False, invert=False, size=SAMPLE_SIZE)
             test_samples[character].append(img)
 
     return test_samples
@@ -114,7 +116,7 @@ def load_image_data(max_set=None, filename=DATA_FILE_NAME, forcecreate=False):
     X_set = np.array(
         [
             # preprocess can be done here
-            np.array(imageutil.readimageinput(image, size=(70,70), as_Image=True)) 
+            np.array(imageutil.readimageinput(image, size=SAMPLE_SIZE, as_Image=True)) 
                 for set_path in set_paths
                     for image in listdir_nohidden(set_path) 
         ]

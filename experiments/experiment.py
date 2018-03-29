@@ -429,8 +429,8 @@ class Experiment(object):
             samples = test_samples[class_key]
             sample_size = len(samples)
             test_data_count += sample_size
-            if sample_size != 0:
-                all_class.append(class_key)
+            
+            all_class.append(class_key)
             for img in samples:
     
                 pred_class = self.__internal_predict(model, img)
