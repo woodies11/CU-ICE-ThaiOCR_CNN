@@ -77,56 +77,61 @@ def chars_from_font(chars, font_path, size):
 
     char_imgs = []
 
-    for char in chars:
+    try:
+        for char in chars:
 
-        # create a white width*height image
-        img = Image.new(mode='L', size=size, color=255)
-        d = ImageDraw.Draw(img)
+            # create a white width*height image
+            img = Image.new(mode='L', size=size, color=255)
+            d = ImageDraw.Draw(img)
 
-        # we want to find the size in pt which fit exactly in our canvas
+            # we want to find the size in pt which fit exactly in our canvas
 
-        # we start with an estimate (the number here came from trial and error)
-        size_in_pt = int(min(w,h)*1.2)
+            # we start with an estimate (the number here came from trial and error)
+            size_in_pt = int(min(w,h)*1.2)
 
-        while True:
-            # we scan up until it overflow
+            while True:
+                # we scan up until it overflow
 
-            _fnt = ImageFont.truetype(font_path, size=size_in_pt)
+                _fnt = ImageFont.truetype(font_path, size=size_in_pt)
 
-            text_width, text_height = _fnt.getsize(char)
-            fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
+                text_width, text_height = _fnt.getsize(char)
+                fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
 
-            if text_width-fnt_offset_x > w or text_height-fnt_offset_y > h:
-                break
+                if text_width-fnt_offset_x > w or text_height-fnt_offset_y > h:
+                    break
 
-            # the rate here can be quite fast as we will do
-            # a precious scan down later
-            size_in_pt += min(int(max(w,h)*0.5), 100)
+                # the rate here can be quite fast as we will do
+                # a precious scan down later
+                size_in_pt += min(int(max(w,h)*0.5), 100)
 
-        while True:
-            # now keep reducing the size slowly until we reach
-            # a size that do not overflow
-            _fnt = ImageFont.truetype(font_path, size=size_in_pt)
+            while True:
+                # now keep reducing the size slowly until we reach
+                # a size that do not overflow
+                _fnt = ImageFont.truetype(font_path, size=size_in_pt)
 
-            text_width, text_height = _fnt.getsize(char)
-            fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
+                text_width, text_height = _fnt.getsize(char)
+                fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
 
-            if text_width-fnt_offset_x <= w and text_height-fnt_offset_y <= h:
-                break
-            size_in_pt -= 1
+                if text_width-fnt_offset_x <= w and text_height-fnt_offset_y <= h:
+                    break
+                size_in_pt -= 1
 
-        fnt = ImageFont.truetype(font_path, size=size_in_pt)
-        text_width, text_height = fnt.getsize(char)
-        fnt_offset_x, fnt_offset_y = fnt.getoffset(char)
+            fnt = ImageFont.truetype(font_path, size=size_in_pt)
+            text_width, text_height = fnt.getsize(char)
+            fnt_offset_x, fnt_offset_y = fnt.getoffset(char)
 
-        # caculate where to place image so it is centered
-        img_x = (w - text_width - fnt_offset_x)/2
-        img_y = (h - text_height - fnt_offset_y)/2
+            # caculate where to place image so it is centered
+            img_x = (w - text_width - fnt_offset_x)/2
+            img_y = (h - text_height - fnt_offset_y)/2
 
-        # draw text on the image, starting at (img_x, img_y) top-left
-        d.text((img_x, img_y), char, font=fnt, fill=0)
-        
-        char_imgs.append(np.array(img))
+            # draw text on the image, starting at (img_x, img_y) top-left
+            d.text((img_x, img_y), char, font=fnt, fill=0)
+            
+            char_imgs.append(np.array(img))
+
+    except OSError as e:
+        print("problem openning {}".format(font_path))
+        return None
 
     # convert to a numpy array then return
     return np.array(char_imgs)

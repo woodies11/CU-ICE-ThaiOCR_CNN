@@ -13,7 +13,7 @@ SMALL_DATA_FILE_NAME = "SMALL_DATA_ARRAY"
 TEST_SAMPLES_FILE_NAME = "TEST_SAMPLES_ARRAY"
 TEST_SAMPLES_PATH = 'th_samples'
 
-SAMPLE_SIZE = (70, 70)
+SAMPLE_SIZE = (56, 56)
 
 def listdir_nohidden(path):
 	directories = glob.glob(path+'/**/*', recursive=True)
