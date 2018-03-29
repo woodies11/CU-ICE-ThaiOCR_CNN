@@ -57,7 +57,7 @@ class Experiment(object):
 
     ################################################
 
-    CLASSES = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
+    CLASSES = [chr(i) for i in range(ord('ก'), ord('ฮ')+1) if not i == ord('ฤ') or not i == ord('ฦ')]
 
     def __init__(self, nameprefix="", namesuffix=""):
         self.INSTANCE_NAME = nameprefix + self.EXPERIMENT_NAME + namesuffix
