@@ -20,8 +20,6 @@ def readimage(img_path):
         img = Image.open(img_path).convert('L')
         img = np.array(img)
 
-    print("reading image from {} with shape {}".format(img_path, img.shape))
-
     return img
 
 def binarise(img):
@@ -37,8 +35,6 @@ def padtosquare(img, padding_ratio=0):
     # we will pad in the other dimension to make 
     # a perfect square (since img is a matrix, it shape is row x col)
     h,w = img.shape
-    
-    print("input: {} x {}".format(w, h))
 
     max_dim = max(w,h)
 
@@ -58,8 +54,6 @@ def padtosquare(img, padding_ratio=0):
     right   = int(x_space/2)
     top     = int(y_space/2) + (0 if y_is_even else 1)
     bottom  = int(y_space/2)
-
-    print("need to pad {} {} {} {}".format(top, bottom, left, right))
     
     img = cv2.copyMakeBorder(img, top, bottom, left, right, borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255])
     return img
@@ -76,60 +70,66 @@ def reshape_for_keras(img):
     """ reshape the numpy array to the same format as our model """
     return img.reshape(1, 1, img.shape[0], img.shape[1]).astype('float32')
 
-def char_from_font(char, font_path, size):
+def chars_from_font(chars, font_path, size):
 
     w = size[0]
     h = size[1]
 
-    # create a white width*height image
-    img = Image.new(mode='L', size=size, color=255)
-    d = ImageDraw.Draw(img)
+    char_imgs = []
 
-    # we want to find the size in pt which fit exactly in our canvas
+    for char in chars:
 
-    # we start with an estimate (the number here came from trial and error)
-    size_in_pt = int(min(w,h)*1.2)
+        # create a white width*height image
+        img = Image.new(mode='L', size=size, color=255)
+        d = ImageDraw.Draw(img)
 
-    while True:
-        # we scan up until it overflow
+        # we want to find the size in pt which fit exactly in our canvas
 
-        _fnt = ImageFont.truetype(font_path, size=size_in_pt)
+        # we start with an estimate (the number here came from trial and error)
+        size_in_pt = int(min(w,h)*1.2)
 
-        text_width, text_height = _fnt.getsize(char)
-        fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
+        while True:
+            # we scan up until it overflow
 
-        if text_width-fnt_offset_x > w or text_height-fnt_offset_y > h:
-            break
+            _fnt = ImageFont.truetype(font_path, size=size_in_pt)
 
-        # the rate here can be quite fast as we will do
-        # a precious scan down later
-        size_in_pt += min(int(max(w,h)*0.5), 100)
+            text_width, text_height = _fnt.getsize(char)
+            fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
 
-    while True:
-        # now keep reducing the size slowly until we reach
-        # a size that do not overflow
-        _fnt = ImageFont.truetype(font_path, size=size_in_pt)
+            if text_width-fnt_offset_x > w or text_height-fnt_offset_y > h:
+                break
 
-        text_width, text_height = _fnt.getsize(char)
-        fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
+            # the rate here can be quite fast as we will do
+            # a precious scan down later
+            size_in_pt += min(int(max(w,h)*0.5), 100)
 
-        if text_width-fnt_offset_x <= w and text_height-fnt_offset_y <= h:
-            break
-        size_in_pt -= 1
+        while True:
+            # now keep reducing the size slowly until we reach
+            # a size that do not overflow
+            _fnt = ImageFont.truetype(font_path, size=size_in_pt)
 
-    fnt = ImageFont.truetype(font_path, size=size_in_pt)
-    text_width, text_height = fnt.getsize(char)
-    fnt_offset_x, fnt_offset_y = fnt.getoffset(char)
+            text_width, text_height = _fnt.getsize(char)
+            fnt_offset_x, fnt_offset_y = _fnt.getoffset(char)
 
-    # caculate where to place image so it is centered
-    img_x = (w - text_width - fnt_offset_x)/2
-    img_y = (h - text_height - fnt_offset_y)/2
+            if text_width-fnt_offset_x <= w and text_height-fnt_offset_y <= h:
+                break
+            size_in_pt -= 1
 
-    # draw text on the image, starting at (img_x, img_y) top-left
-    d.text((img_x, img_y), char, font=fnt, fill=0)
+        fnt = ImageFont.truetype(font_path, size=size_in_pt)
+        text_width, text_height = fnt.getsize(char)
+        fnt_offset_x, fnt_offset_y = fnt.getoffset(char)
+
+        # caculate where to place image so it is centered
+        img_x = (w - text_width - fnt_offset_x)/2
+        img_y = (h - text_height - fnt_offset_y)/2
+
+        # draw text on the image, starting at (img_x, img_y) top-left
+        d.text((img_x, img_y), char, font=fnt, fill=0)
+        
+        char_imgs.append(np.array(img))
 
     # convert to a numpy array then return
-    return np.array(img)
+    return np.array(char_imgs)
 
 def showimage(img):
     plt.imshow(img, cmap=plt.get_cmap('gray'))
@@ -138,14 +138,24 @@ def showimage(img):
 
 if __name__ == '__main__':
 
-    for i in range(ord('ก'), ord('ฮ')):
+    # for i in range(ord('ก'), ord('ฮ')):
 
-        plt.subplot(5,10,i+1-ord('ก'))
+    #     plt.subplot(5,10,i+1-ord('ก'))
 
-        img = char_from_font(chr(i), 'fonts/4711_AtNoon_Traditional.ttf', size=(56, 56))
+    #     img = char_from_font(chr(i), 'fonts/4711_AtNoon_Traditional.ttf', size=(56, 56))
+    #     # img = binarise(img)
+
+    #     plt.imshow(img, cmap=plt.get_cmap('gray'))
+
+    for i in range(1,9):
+        plt.subplot(2,4,i)
+        img = readimage('th_samples/ก/im12_3.jpg')
         # img = binarise(img)
+        img = trim(img)
+        img = padtosquare(img)
+        img = resize(img, (56, 56))
+        img = morph_open(img, (1<<2, 1<<2))
 
         plt.imshow(img, cmap=plt.get_cmap('gray'))
-
     plt.show()
     plt.close()

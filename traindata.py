@@ -3,7 +3,7 @@ import os
 import glob
 from PIL import Image
 import h5py
-import imageutil
+import imageutil2 as imgutil
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 
@@ -15,15 +15,37 @@ TEST_SAMPLES_PATH = 'th_samples'
 
 SAMPLE_SIZE = (70, 70)
 
+def listdir_nohidden(path):
+	directories = glob.glob(path+'/**/*', recursive=True)
+	return [file for file in directories if os.path.isfile(file)]
+
+def apply_image_preprocess(img, size=SAMPLE_SIZE, binarise=True):
+    img = imgutil.trim(img)
+    img = imgutil.padtosquare(img)
+    if binarise:
+        img = imgutil.binarise(img)
+    img = imgutil.resize(img, size)
+    img = imgutil.morph_open(img, (2, 2))
+    return img
+
+def reshape_image_for_keras(img):
+    return imgutil.reshape_for_keras(img)
+
+def load_img_as_numpy(img_path, reshape=False, preprocess=True):
+    img = imgutil.readimage(img_path)
+    if preprocess:
+        img = apply_image_preprocess(img)
+    if reshape:
+        img = reshape_image_for_keras(img)
+    return img
+
+# ============= TEST SAMPLES ===============
+
 def load_test_samples(forcecreate=False):
-
-    filename = TEST_SAMPLES_FILE_NAME
-
     # construct test_sample array
-    classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
+    classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1) if i != ord('ฦ') and i != ord('ฤ')]
     test_samples = {c:[] for c in classes}
 
-    
     paths = os.listdir(TEST_SAMPLES_PATH)
     
     for character in paths:
@@ -37,11 +59,23 @@ def load_test_samples(forcecreate=False):
             # ignore system files
             if(img_name.startswith('.')):
                 continue    
-
-            img = imageutil.readimageinput(TEST_SAMPLES_PATH+"/"+character+'/'+img_name, preview=False, invert=False, size=SAMPLE_SIZE)
+            img_path = os.path.join(TEST_SAMPLES_PATH, character, img_name)
+            img = load_img_as_numpy(img_path, reshape=True, preprocess=True)
             test_samples[character].append(img)
 
     return test_samples
+
+# ============ TRAIN SAMPLE ===============
+
+def load_trainset(max_set=None, test_size = 0.20, sklearn_seed = 42, np_seed = 7, small_test_set=False, forcecreate=False):
+    
+    test_set = SMALL_DATA_FILE_NAME if small_test_set else DATA_FILE_NAME
+    max_set = 20 if small_test_set else None
+
+    # fix random
+    np.random.seed(np_seed)
+
+
 
 def load_and_construct_dataset(max_set=None, test_size = 0.20, sklearn_seed = 42, np_seed = 7, small_test_set=False, forcecreate=False):
 
@@ -67,12 +101,6 @@ def load_and_construct_dataset(max_set=None, test_size = 0.20, sklearn_seed = 42
         random_state=sklearn_seed
     )
 
-    img_width = X_set.shape[1]
-    img_height = X_set.shape[2]
-
-    # reshape to be [samples][layer (black)][x][y]
-    X_train = X_train.reshape(X_train.shape[0], 1, img_width, img_height).astype('float32')
-    X_test = X_test.reshape(X_test.shape[0], 1, img_width, img_height).astype('float32')
     # normalize inputs from 0-255 to 0-1
     X_train = X_train / 255
     X_test = X_test / 255
@@ -81,7 +109,7 @@ def load_and_construct_dataset(max_set=None, test_size = 0.20, sklearn_seed = 42
 
     return dataset
 
-def load_image_data(max_set=None, filename=DATA_FILE_NAME, forcecreate=False):
+def load_image_data(max_set=None, filename=DATA_FILE_NAME, forcecreate=False, size=SAMPLE_SIZE):
 
     print('Loading Numpy Array...')
     
@@ -101,34 +129,28 @@ def load_image_data(max_set=None, filename=DATA_FILE_NAME, forcecreate=False):
             print("\tCorrupted h5 file. Recreating Numpy Array...")
     else:
         print("\tforcecreate is set to True. Recreating Numpy Array...")
-        
-    def listdir_nohidden(path):
-        # list files without hidden file
-        return glob.glob(os.path.join(path, '*'))
 
-    image_folder = 'image_from_font'
-    set_paths = listdir_nohidden(image_folder)
+    fonts_path = './fonts'
+    fonts = listdir_nohidden(fonts_path)
 
     if max_set is not None:
-        set_paths = set_paths[0:max_set+1]
+        fonts = fonts[0:max_set]
 
-    # load images as grayscale
-    X_set = np.array(
-        [
-            # preprocess can be done here
-            np.array(imageutil.readimageinput(image, size=SAMPLE_SIZE, as_Image=True)) 
-                for set_path in set_paths
-                    for image in listdir_nohidden(set_path) 
-        ]
-    )
-    y_set = np.array(
-        [
-            # '/' for mac directory, '\\' for windows directory 
-            image.split('/')[-1].split('\\')[-1].split('.')[0].encode('utf-8') 
-                for set_path in set_paths
-                    for image in listdir_nohidden(set_path)
-        ]
-    )
+    classes = [chr(i) for i in range(ord('ก'), ord('ฮ')+1) if i != ord('ฦ') and i != ord('ฤ')]
+
+    X_set = np.array([
+        imgutil.chars_from_font(classes, font, size) 
+        for font in fonts
+    ])
+
+    y_set = np.array([y for _ in fonts for y in classes])
+
+    img_width = X_set.shape[2]
+    img_height = X_set.shape[3]
+
+    X_set = X_set.reshape(X_set.shape[0]*X_set.shape[1], 1, img_width, img_height)
+
+    return X_set, y_set
 
     try:
         print("\t\tSaving numpy array for future use.")
@@ -146,3 +168,6 @@ def load_image_data(max_set=None, filename=DATA_FILE_NAME, forcecreate=False):
     print('\t\t{} data loaded '.format(X_set.shape[0]))
 
     return X_set, y_set
+
+if __name__ == "__main__":
+    load_image_data(10, forcecreate=True)
