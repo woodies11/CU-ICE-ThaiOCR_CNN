@@ -417,7 +417,7 @@ class Experiment(object):
     def evaluate(self, model, test_samples, **kwargs):
 
         # { character : [count, right] }
-        classes_dict = {chr(i):[0,0] for i in range(ord('ก'), ord('ฮ')+1)}
+        classes_dict = {c:[0,0] for c in self.CLASSES}
 
         correct_count = 0
         test_data_count = 0
