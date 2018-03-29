@@ -57,7 +57,7 @@ class Experiment(object):
 
     ################################################
 
-    CLASSES = [chr(i) for i in range(ord('ก'), ord('ฮ')+1) if i != ord('ฤ') and i != ord('ฦ')]
+    CLASSES = [chr(i) for i in range(ord('ก'), ord('ฮ')+1)]
 
     def __init__(self, nameprefix="", namesuffix=""):
         self.INSTANCE_NAME = nameprefix + self.EXPERIMENT_NAME + namesuffix
@@ -221,9 +221,9 @@ class Experiment(object):
         # by ignoring the first, now -, character and add the . back on
         save_path = "." + save_path.replace(".", "-")[1:]
 
-        # Pop the two character we ignored out if exist.
-        classes_acc.pop('ฤ', None)
-        classes_acc.pop('ฦ', None)
+        # # Pop the two character we ignored out if exist.
+        # classes_acc.pop('ฤ', None)
+        # classes_acc.pop('ฦ', None)
 
         fig = plt.figure()
         ax = fig.gca()
