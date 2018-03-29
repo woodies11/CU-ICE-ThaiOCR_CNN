@@ -5,7 +5,8 @@ import numpy as np
 import re
 from pathlib import Path
 from keras.callbacks import ModelCheckpoint
-import gc
+from sklearn.metrics import confusion_matrix
+import itertools
 
 def setup_logger(name, log_file, level=logging.DEBUG, format='%(levelname)-7s|%(module)s|%(asctime)s: %(message)s'):
     """Function setup as many loggers as you want"""
@@ -246,6 +247,88 @@ class Experiment(object):
         plt.close()
         self.general_logger.info("STATISTIC: Bar chart for {} saved to {}".format(name, save_path))
 
+    def _generate_confusion_matrix(self, all_class, all_label, all_pred, name):
+        cm = confusion_matrix(all_label, all_pred)
+        cm_plot_labels = all_class
+        self.plot_confusion_matrix(cm, cm_plot_labels, name)
+
+    def plot_confusion_matrix(self, cm, classes, name,
+                          directory=None,
+                          title=None,
+                          showVal = False,
+                          normalize=False):
+        """
+        This function prints and plots the confusion matrix.
+        Normalization can be applied by setting `normalize=True`.
+        """
+        if directory is None:
+            directory = self.RESULT_STATISTIC_DIRECTORY
+
+        # make sure directory path ended with the last / 
+        if not directory.endswith('/'):
+            directory = directory + '/'
+
+        if title is None:
+            title = name
+
+        save_path = directory + name
+        # . will mess up savefig
+        # However, the very first one is a legit . for ./PATH so we need to keep it
+        # by ignoring the first, now -, character and add the . back on
+        save_path = "." + save_path.replace(".", "-")[1:] + "_cm"
+        if showVal:
+            plt.figure(dpi=200)
+            cmap = plt.cm.Blues
+        else:
+            plt.figure(dpi=150)
+            cmap = plt.cm.Greys
+        
+        plt.imshow(cm, interpolation='nearest', cmap=cmap)
+        plt.title(title)
+        plt.colorbar()
+        tick_marks = np.arange(len(classes))
+        plt.xticks(tick_marks, classes, fontname='Tahoma', fontsize=7)
+        plt.yticks(tick_marks, classes, fontname='Tahoma', fontsize=7)
+        log_text = "Confusion matrix:"
+        if showVal:
+            if normalize:
+                cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+                log_text += " Normalized"
+            else:
+                log_text += " without normalization"
+
+        # print(cm)
+
+        thresh = cm.max() / 2.
+        if showVal:
+            # warning, showing value in such dense matrix will not look so nice
+            # try change font size, canvas size, dpi
+            for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+                val_text = cm[i, j]
+                if val_text==0 :
+                    val_text = ""
+                plt.text(j, i, 
+                         val_text,
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black",
+                         fontname='Tahoma',
+                         fontsize=3)
+        else:
+            for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+                plt.text(j, i, 
+                         "",
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+
+        # plt.tight_layout()
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
+
+        # save figure to the save_path
+        plt.savefig(save_path)
+        plt.close()
+        self.general_logger.info(log_text + " for {} saved to {}".format(name, save_path))
+
     # ========================================================================================================
     # These SHOULD NOT BE OVERRIDDEN
     # ========================================================================================================
@@ -313,26 +396,19 @@ class Experiment(object):
         json_file = directory + self._model_name_from_parameters(batch_size, **kwargs)
 
         for model_weight in model_paths:
-            # clear up memory for next iteration
-            model = None
-            gc.collect()
-
-            # if the file is not of .h5 extension, skip
             if not model_weight.endswith('.h5'):
                 continue
-
-            # TODO: change to os getpath or something
             model_name = model_weight.split('/')[-1].split('\\')[-1][:-3]
 
-            # load the model
             model = self.loadmodel(json_file, model_weight, **kwargs)
 
             # evaluate model
-            classes_acc, overall_acc, correct_count, test_data_count = self.evaluate(model, test_samples, **kwargs)
+            classes_acc, overall_acc, correct_count, test_data_count, all_class, all_label, all_pred = self.evaluate(model, test_samples, **kwargs)
             xlabel = '{}/{} correct ({})'.format(correct_count, test_data_count, overall_acc)
 
             # generate and save plot
             self._generate_bar_char_img(classes_acc, model_name, xlabel=xlabel)
+            self._generate_confusion_matrix(all_class, all_label, all_pred, model_name)
 
     def __internal_predict(self, model, test_sample, **kwargs):
         classes = Experiment.CLASSES
@@ -345,13 +421,22 @@ class Experiment(object):
 
         correct_count = 0
         test_data_count = 0
+        all_class = []
+        all_label = []
+        all_pred = []
 
         for class_key in test_samples:
             samples = test_samples[class_key]
-            test_data_count += len(samples)
+            sample_size = len(samples)
+            test_data_count += sample_size
+            if sample_size != 0:
+                all_class.append(class_key)
             for img in samples:
-
+    
                 pred_class = self.__internal_predict(model, img)
+
+                all_label.append(class_key)
+                all_pred.append(pred_class)
 
                 is_correct = str(pred_class) == str(class_key)
 
@@ -370,4 +455,4 @@ class Experiment(object):
         overall_acc = correct_count/test_data_count
         self.general_logger.info('{}/{} correct ({})'.format(correct_count, test_data_count, overall_acc))
         
-        return classes_acc, overall_acc, correct_count, test_data_count
+        return classes_acc, overall_acc, correct_count, test_data_count, all_class, all_label, all_pred
