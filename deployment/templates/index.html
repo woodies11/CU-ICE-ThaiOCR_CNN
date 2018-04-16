@@ -26,8 +26,11 @@
 		</div>
 
 		<div style="margin-left:175px; margin-top:460px; float:left; position:absolute;">
-			
-			<a href="#" class="myButton"><span style=" font-weight: 400; font-family: 'Open Sans', Helvetica;	"> Predict </span></a>			
+			<div style="width: 0;">
+                <a href="#" class="myButton"><span style=" font-weight: 400; font-family: 'Open Sans', Helvetica;	"> Predict </span></a>		
+                <input type="file" accept="image/*;capture=camera" onchange="previewFile()"><br>
+                <img src="" height="200" alt="Image preview...">
+            </div>
 		</div>
 		<div >
 			<h1 id="result" style="margin-right:20px; margin-top:300px;float:left;"><span> </span></h1>
@@ -53,6 +56,35 @@
 	   			});
 	   		});
 	   
-	   </script>
+        </script>
+        <script>
+            function previewFile(){
+                var preview = document.querySelector('img'); //selects the query named img
+                var file    = document.querySelector('input[type=file]').files[0]; //sames as here
+                var reader  = new FileReader();
+
+                reader.onloadend = function () {
+                    preview.src = reader.result;
+                     var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+//	   			     var canvasObj = document.getElementById("canvas");
+//	   			     var img = canvasObj.toDataURL();
+                     var img = reader.result;
+	   			     $.ajax({
+	   				    type: "POST",
+	   				    url: $SCRIPT_ROOT + "/predict/",
+	   				    data: img,
+	   				    success: function(data){
+	   					   $('#result').text(' Predicted Output: '+data);
+	   				    }
+	   			     });
+                }
+
+                if (file) {
+                    reader.readAsDataURL(file); //reads the data as a URL
+                } else {
+                    preview.src = "";
+                }
+            }
+        </script>
 </body>
 </html>
