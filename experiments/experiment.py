@@ -280,10 +280,11 @@ class Experiment(object):
             plt.figure(dpi=200)
             cmap = plt.cm.Blues
         else:
-            plt.figure(dpi=150)
-            cmap = plt.cm.Greys
-        
-        plt.imshow(cm, interpolation='nearest', cmap=cmap)
+            # plt.figure(dpi=150)
+            plt.figure(dpi=300)
+            cmap = plt.cm.brg
+        cmap.set_under(color='white')
+        plt.imshow(cm, interpolation='nearest', cmap=cmap, vmin=0.0000001)
         plt.title(title)
         plt.colorbar()
         tick_marks = np.arange(len(classes))
