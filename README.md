@@ -1,5 +1,5 @@
-# greenmotherboard
-A totally normal green motherboard
+# CU-ICE-ThaiOCR_CNN
+A project experimenting with using synthetically created character images from TrueType font in a CNN system used to recognize handwritten characters.
 
 
 # Setting up the Environment
